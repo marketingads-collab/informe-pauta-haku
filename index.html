@@ -188,6 +188,22 @@ tr.zona:hover{background:var(--line-soft)}
 .chip.call{background:var(--accent-soft); color:var(--accent-ink)}
 .chip.sala{background:var(--serie-2-soft); color:var(--serie-2)}
 .chip.otro{background:var(--surface-2); color:var(--ink-3); border:1px solid var(--line)}
+/* ---------- mini-graficas por sociedad ---------- */
+.mini{display:grid; grid-template-columns:repeat(auto-fill, minmax(214px,1fr));
+  gap:1px; background:var(--line); border-bottom:1px solid var(--line)}
+.card{margin:0; padding:12px 14px 10px; background:var(--surface)}
+.card figcaption{display:flex; align-items:baseline; justify-content:space-between;
+  gap:8px; margin-bottom:6px}
+.card .nom{font-size:13px; font-weight:600; letter-spacing:-.01em;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.card .tope{font-family:var(--font-m); font-size:9.5px; color:var(--ink-3);
+  white-space:nowrap; flex:none}
+.card svg{display:block; width:100%; height:76px; overflow:visible}
+.card .pie2{display:flex; justify-content:space-between; gap:8px; margin-top:7px;
+  font-size:11px; color:var(--ink-2)}
+.card .pie2 b{font-family:var(--font-m); font-variant-numeric:tabular-nums;
+  color:var(--ink); font-weight:600}
+
 /* ---------- matriz del año ---------- */
 #tblAnio th, #tblAnio td{padding:7px 10px}
 #tblAnio tbody td:first-child{font-weight:600; position:sticky; left:0;
@@ -313,6 +329,7 @@ footer{margin-top:44px; padding-top:20px; border-top:1px solid var(--line);
           <button type="button" class="fbtn" id="anCpl" aria-pressed="false">Costo por lead</button>
         </div>
       </div>
+      <div class="mini" id="mini"></div>
       <div class="tscroll">
         <table id="tblAnio"><thead></thead><tbody></tbody></table>
       </div>
@@ -479,7 +496,7 @@ function pintarTabs(disp){
     b.type="button"; b.className="tab"; b.style.setProperty("--c", colTipo(nom));
     b.setAttribute("aria-pressed", t===tipoSel);
     b.innerHTML=`${nom} <span class="tabn">${miles(tot)}</span>`;
-    b.onclick=()=>{ tipoSel=t; abiertas.clear(); renderTabla(); renderAnio(); };
+    b.onclick=()=>{ tipoSel=t; abiertas.clear(); renderTabla(); renderAnio(); renderMini(); };
     box.appendChild(b);
   });
 }
@@ -594,6 +611,74 @@ function renderSocs(){
 // ---------- el año por sociedad (matriz sociedad x mes) ----------
 let anioVista = "leads";     // "leads" | "cpl"
 
+
+// Una mini-grafica por sociedad. Con 16 sociedades, una sola grafica con 16
+// lineas seria ilegible (y la paleta categorica no da para tantas series).
+// Cada tarjeta lleva SU PROPIA escala: aqui se compara la FORMA, no la altura
+// — la magnitud se lee en los numeros, y el tope del eje va rotulado.
+function renderMini(){
+  const box=document.getElementById("mini");
+  if(tipoSel==null){ box.innerHTML=""; return; }
+  const M={};
+  D.et.forEach(([m,e,t,l,c])=>{ if(t===tipoSel) (M[e]=M[e]||{})[m]={l,c}; });
+  const socs=Object.keys(M).map(Number)
+    .sort((a,b)=>D.empresas[a].localeCompare(D.empresas[b],"es"));
+  const col=colTipo(D.tipos[tipoSel]);
+  const W=260,H=76,L=6,R=6,T=10,B=14, iw=W-L-R, ih=H-T-B;
+
+  box.innerHTML = socs.map(e=>{
+    const serie=D.meses.map(m=>{ const x=M[e][m]; return x? (anioVista==="leads"? x.l : x.c) : null; });
+    const hay=serie.filter(v=>v!=null);
+    if(!hay.length) return "";
+    const top=Math.max(...hay)||1;
+    const x=i=>L+(D.meses.length>1? i/(D.meses.length-1):.5)*iw;
+    const y=v=>T+ih-(v/top)*ih;
+
+    // tramos continuos: los meses sin pauta cortan la linea, no la inventan
+    const tramos=[]; let cur=[];
+    serie.forEach((v,i)=>{ if(v==null){ if(cur.length)tramos.push(cur); cur=[]; }
+                           else cur.push([x(i),y(v)]); });
+    if(cur.length) tramos.push(cur);
+
+    const linea=tramos.filter(s=>s.length>1).map(s=>
+      `<path d="${s.map((p,i)=>(i?"L":"M")+p[0].toFixed(1)+" "+p[1].toFixed(1)).join(" ")}"
+        fill="none" stroke="${col}" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>`).join("");
+    const sueltos=tramos.filter(s=>s.length===1).map(s=>
+      `<circle cx="${s[0][0].toFixed(1)}" cy="${s[0][1].toFixed(1)}" r="2.4" fill="${col}"/>`).join("");
+    const area=tramos.filter(s=>s.length>1).map(s=>
+      `<path d="${s.map((p,i)=>(i?"L":"M")+p[0].toFixed(1)+" "+p[1].toFixed(1)).join(" ")}
+        L ${s[s.length-1][0].toFixed(1)} ${T+ih} L ${s[0][0].toFixed(1)} ${T+ih} Z"
+        fill="${col}" opacity=".12"/>`).join("");
+
+    const ult=[...serie].reverse().find(v=>v!=null);
+    const iu=serie.lastIndexOf(ult);
+    const fin=`<circle cx="${x(iu).toFixed(1)}" cy="${y(ult).toFixed(1)}" r="3"
+      fill="${col}" stroke="var(--surface)" stroke-width="1.5"/>`;
+    const ejes=D.meses.map((m,i)=> (i===0||i===D.meses.length-1)
+      ? `<text class="axis-t" x="${x(i).toFixed(1)}" y="${H-1}"
+          text-anchor="${i?"end":"start"}" style="font-size:9px">${MES3[m]}</text>` : "").join("");
+
+    const con=D.meses.map(m=>M[e][m]).filter(Boolean);
+    const tl=con.reduce((a,v)=>a+v.l,0);
+    const ti=con.reduce((a,v)=>a+(v.c!=null? v.c*v.l:0),0);
+    const tot = anioVista==="leads" ? tl : (tl? Math.round(ti/tl):null);
+    const f = v => v==null? "—" : (anioVista==="leads"? miles(v) : pesos(v));
+
+    return `<figure class="card">
+      <figcaption>
+        <span class="nom">${D.empresas[e]}</span>
+        <span class="tope">máx ${f(top)}</span>
+      </figcaption>
+      <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img"
+        aria-label="${D.empresas[e]}: ${anioVista==="leads"?"leads":"costo por lead"} por mes">
+        <line class="gridline" x1="${L}" y1="${T+ih}" x2="${W-R}" y2="${T+ih}"/>
+        ${area}${linea}${sueltos}${fin}${ejes}
+      </svg>
+      <div class="pie2"><span>Último: <b>${f(ult)}</b></span><span>Año: <b>${f(tot)}</b></span></div>
+    </figure>`;
+  }).join("");
+}
+
 function renderAnio(){
   const tp = tipoSel==null ? null : D.tipos[tipoSel];
   document.getElementById("anioSub").textContent = tp
@@ -645,13 +730,13 @@ function renderAnio(){
   const bl=document.getElementById("anLeads"), bc=document.getElementById("anCpl");
   bl.setAttribute("aria-pressed", anioVista==="leads");
   bc.setAttribute("aria-pressed", anioVista==="cpl");
-  bl.onclick=()=>{ anioVista="leads"; renderAnio(); };
-  bc.onclick=()=>{ anioVista="cpl";   renderAnio(); };
+  bl.onclick=()=>{ anioVista="leads"; renderAnio(); renderMini(); };
+  bc.onclick=()=>{ anioVista="cpl";   renderAnio(); renderMini(); };
 }
 
 function render(){
   document.querySelectorAll(".mbtn").forEach(b=> b.setAttribute("aria-pressed", b.id==="mes-"+mesSel));
-  renderTabla(); renderSocs(); renderDia(); renderAnio();
+  renderTabla(); renderSocs(); renderDia(); renderAnio(); renderMini();
 }
 const [Y,M,Dd]=D.hasta.split("-");
 document.getElementById("pie").textContent=`Actualizado ${Dd}/${M}/${Y}`;
