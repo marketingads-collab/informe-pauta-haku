@@ -188,21 +188,11 @@ tr.zona:hover{background:var(--line-soft)}
 .chip.call{background:var(--accent-soft); color:var(--accent-ink)}
 .chip.sala{background:var(--serie-2-soft); color:var(--serie-2)}
 .chip.otro{background:var(--surface-2); color:var(--ink-3); border:1px solid var(--line)}
-/* ---------- mini-graficas por sociedad ---------- */
-.mini{display:grid; grid-template-columns:repeat(auto-fill, minmax(214px,1fr));
-  gap:1px; background:var(--line); border-bottom:1px solid var(--line)}
-.card{margin:0; padding:12px 14px 10px; background:var(--surface)}
-.card figcaption{display:flex; align-items:baseline; justify-content:space-between;
-  gap:8px; margin-bottom:6px}
-.card .nom{font-size:13px; font-weight:600; letter-spacing:-.01em;
-  overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
-.card .tope{font-family:var(--font-m); font-size:9.5px; color:var(--ink-3);
-  white-space:nowrap; flex:none}
-.card svg{display:block; width:100%; height:76px; overflow:visible}
-.card .pie2{display:flex; justify-content:space-between; gap:8px; margin-top:7px;
-  font-size:11px; color:var(--ink-2)}
-.card .pie2 b{font-family:var(--font-m); font-variant-numeric:tabular-nums;
-  color:var(--ink); font-weight:600}
+/* ---------- barras del año ---------- */
+.bara{transition:opacity .12s}
+.chart-wrap:hover .bara{opacity:.55}
+.chart-wrap .bara:hover{opacity:1}
+@media (prefers-reduced-motion:reduce){.bara,.chart-wrap:hover .bara{transition:none}}
 
 /* ---------- matriz del año ---------- */
 #tblAnio th, #tblAnio td{padding:7px 10px}
@@ -329,7 +319,16 @@ footer{margin-top:44px; padding-top:20px; border-top:1px solid var(--line);
           <button type="button" class="fbtn" id="anCpl" aria-pressed="false">Costo por lead</button>
         </div>
       </div>
-      <div class="mini" id="mini"></div>
+      <div class="socbar">
+        <span class="soclbl">Sociedad</span>
+        <div class="socs" id="socs2" role="group" aria-label="Elegir sociedad"></div>
+      </div>
+      <div class="legend" id="legAnio"></div>
+      <div class="chart-wrap chart-box">
+        <svg id="svgAnio" viewBox="0 0 900 300" preserveAspectRatio="xMidYMid meet"
+          role="img" aria-label="Leads por mes, separados en Call y Sala"></svg>
+        <div class="tip" id="tipAnio"></div>
+      </div>
       <div class="tscroll">
         <table id="tblAnio"><thead></thead><tbody></tbody></table>
       </div>
@@ -597,13 +596,15 @@ function renderSocs(){
   const dis=D.emp.filter(r=>r[0]===mesSel && r[2]>0)
     .sort((a,b)=>b[2]-a[2]).map(r=>r[1]);
   if(!dis.includes(socSel)) socSel = dis[0] ?? null;
-  const box=document.getElementById("socs"); box.innerHTML="";
-  dis.slice().sort((a,b)=>D.empresas[a].localeCompare(D.empresas[b])).forEach(e=>{
-    const b=document.createElement("button");
-    b.className="fbtn"; b.type="button"; b.textContent=D.empresas[e];
-    b.setAttribute("aria-pressed", e===socSel);
-    b.onclick=()=>{ socSel=e; renderSocs(); renderDia(); };
-    box.appendChild(b);
+  ["socs","socs2"].forEach(id=>{
+    const box=document.getElementById(id); box.innerHTML="";
+    dis.slice().sort((a,b)=>D.empresas[a].localeCompare(D.empresas[b],"es")).forEach(e=>{
+      const b=document.createElement("button");
+      b.className="fbtn"; b.type="button"; b.textContent=D.empresas[e];
+      b.setAttribute("aria-pressed", e===socSel);
+      b.onclick=()=>{ socSel=e; renderSocs(); renderDia(); renderMini(); };
+      box.appendChild(b);
+    });
   });
 }
 
@@ -612,77 +613,83 @@ function renderSocs(){
 let anioVista = "leads";     // "leads" | "cpl"
 
 
-// Una mini-grafica por sociedad. Con 16 sociedades, una sola grafica con 16
-// lineas seria ilegible (y la paleta categorica no da para tantas series).
-// Cada tarjeta lleva SU PROPIA escala: aqui se compara la FORMA, no la altura
-// — la magnitud se lee en los numeros, y el tope del eje va rotulado.
+// ---------- barras por mes de la sociedad elegida ----------
+// Mismo patron que la grafica diaria, pero el eje X son meses y las marcas
+// son barras agrupadas (Call y Sala lado a lado) sobre UN solo eje.
 function renderMini(){
-  const box=document.getElementById("mini");
-  if(tipoSel==null){ box.innerHTML=""; return; }
+  const svg=document.getElementById("svgAnio"), tip=document.getElementById("tipAnio");
+  const W=900,H=300, L=66,R=16,T=18,B=38, iw=W-L-R, ih=H-T-B;
+  if(socSel==null){ svg.innerHTML=""; return; }
+
   const M={};
-  D.et.forEach(([m,e,t,l,c])=>{ if(t===tipoSel) (M[e]=M[e]||{})[m]={l,c}; });
-  const socs=Object.keys(M).map(Number)
-    .sort((a,b)=>D.empresas[a].localeCompare(D.empresas[b],"es"));
-  const col=colTipo(D.tipos[tipoSel]);
-  const W=260,H=76,L=6,R=6,T=10,B=14, iw=W-L-R, ih=H-T-B;
+  D.et.forEach(([m,e,t,l,c])=>{ if(e===socSel) (M[t]=M[t]||{})[m]={l,c}; });
+  const tipos=Object.keys(M).map(Number)
+    .sort((a,b)=>D.tipos[a].localeCompare(D.tipos[b],"es"));
+  const series=tipos.map(t=>({t, nom:D.tipos[t], color:colTipo(D.tipos[t]),
+    vals:D.meses.map(m=>{ const x=M[t][m]; return x? (anioVista==="leads"? x.l : x.c) : null; })}));
 
-  box.innerHTML = socs.map(e=>{
-    const serie=D.meses.map(m=>{ const x=M[e][m]; return x? (anioVista==="leads"? x.l : x.c) : null; });
-    const hay=serie.filter(v=>v!=null);
-    if(!hay.length) return "";
-    const top=Math.max(...hay)||1;
-    const x=i=>L+(D.meses.length>1? i/(D.meses.length-1):.5)*iw;
-    const y=v=>T+ih-(v/top)*ih;
-
-    // tramos continuos: los meses sin pauta cortan la linea, no la inventan
-    const tramos=[]; let cur=[];
-    serie.forEach((v,i)=>{ if(v==null){ if(cur.length)tramos.push(cur); cur=[]; }
-                           else cur.push([x(i),y(v)]); });
-    if(cur.length) tramos.push(cur);
-
-    const linea=tramos.filter(s=>s.length>1).map(s=>
-      `<path d="${s.map((p,i)=>(i?"L":"M")+p[0].toFixed(1)+" "+p[1].toFixed(1)).join(" ")}"
-        fill="none" stroke="${col}" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>`).join("");
-    const sueltos=tramos.filter(s=>s.length===1).map(s=>
-      `<circle cx="${s[0][0].toFixed(1)}" cy="${s[0][1].toFixed(1)}" r="2.4" fill="${col}"/>`).join("");
-    const area=tramos.filter(s=>s.length>1).map(s=>
-      `<path d="${s.map((p,i)=>(i?"L":"M")+p[0].toFixed(1)+" "+p[1].toFixed(1)).join(" ")}
-        L ${s[s.length-1][0].toFixed(1)} ${T+ih} L ${s[0][0].toFixed(1)} ${T+ih} Z"
-        fill="${col}" opacity=".12"/>`).join("");
-
-    const ult=[...serie].reverse().find(v=>v!=null);
-    const iu=serie.lastIndexOf(ult);
-    const fin=`<circle cx="${x(iu).toFixed(1)}" cy="${y(ult).toFixed(1)}" r="3"
-      fill="${col}" stroke="var(--surface)" stroke-width="1.5"/>`;
-    const ejes=D.meses.map((m,i)=> (i===0||i===D.meses.length-1)
-      ? `<text class="axis-t" x="${x(i).toFixed(1)}" y="${H-1}"
-          text-anchor="${i?"end":"start"}" style="font-size:9px">${MES3[m]}</text>` : "").join("");
-
-    const con=D.meses.map(m=>M[e][m]).filter(Boolean);
-    const tl=con.reduce((a,v)=>a+v.l,0);
-    const ti=con.reduce((a,v)=>a+(v.c!=null? v.c*v.l:0),0);
+  const f = v => v==null? "—" : (anioVista==="leads"? miles(v) : pesos(v));
+  pintarLeyenda(document.getElementById("legAnio"), series, s=>{
+    const con=D.meses.map(m=>M[s.t][m]).filter(Boolean);
+    const tl=con.reduce((a,x)=>a+x.l,0);
+    const ti=con.reduce((a,x)=>a+(x.c!=null? x.c*x.l:0),0);
     const tot = anioVista==="leads" ? tl : (tl? Math.round(ti/tl):null);
-    const f = v => v==null? "—" : (anioVista==="leads"? miles(v) : pesos(v));
+    return ` · <span class="mono">${f(tot)} en el año</span>`;
+  });
 
-    return `<figure class="card">
-      <figcaption>
-        <span class="nom">${D.empresas[e]}</span>
-        <span class="tope">máx ${f(top)}</span>
-      </figcaption>
-      <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img"
-        aria-label="${D.empresas[e]}: ${anioVista==="leads"?"leads":"costo por lead"} por mes">
-        <line class="gridline" x1="${L}" y1="${T+ih}" x2="${W-R}" y2="${T+ih}"/>
-        ${area}${linea}${sueltos}${fin}${ejes}
-      </svg>
-      <div class="pie2"><span>Último: <b>${f(ult)}</b></span><span>Año: <b>${f(tot)}</b></span></div>
-    </figure>`;
-  }).join("");
+  const todos=series.flatMap(s=>s.vals).filter(v=>v!=null && v>0);
+  if(!todos.length){ svg.innerHTML=`<text x="${W/2}" y="${H/2}" text-anchor="middle" class="axis-t">Sin datos</text>`; return; }
+  const maxV=Math.max(...todos);
+  const step=Math.pow(10,Math.floor(Math.log10(maxV)))/2 || 1;
+  const top=Math.ceil(maxV/step)*step || 1;
+  const y=v=>T+ih-(v/top)*ih;
+
+  // reparto del ancho: cada mes es un grupo, dentro van las barras con 2px de aire
+  const paso=iw/D.meses.length;
+  const gAncho=Math.min(paso*0.68, 74);
+  const bAncho=Math.max(6, (gAncho-(series.length-1)*2)/series.length);
+  const gx=i=>L+paso*i+(paso-gAncho)/2;
+
+  let g="";
+  for(let k=0;k<=4;k++){ const v=top*k/4, yy=y(v);
+    g+=`<line class="gridline" x1="${L}" y1="${yy}" x2="${W-R}" y2="${yy}"/>`
+     + `<text class="axis-t" x="${L-9}" y="${yy+3.5}" text-anchor="end">${f(v)}</text>`; }
+  D.meses.forEach((m,i)=>{ g+=`<text class="axis-t" x="${(gx(i)+gAncho/2).toFixed(1)}" y="${H-B+19}"
+      text-anchor="middle">${MES3[m]}</text>`; });
+
+  let barras="";
+  D.meses.forEach((m,i)=>{
+    series.forEach((s,j)=>{
+      const v=s.vals[i]; if(v==null||v<=0) return;
+      const x=gx(i)+j*(bAncho+2), h=Math.max(2, T+ih-y(v));
+      barras+=`<rect class="bara" x="${x.toFixed(1)}" y="${y(v).toFixed(1)}"
+        width="${bAncho.toFixed(1)}" height="${h.toFixed(1)}" rx="3" fill="${s.color}"
+        data-m="${m}" data-s="${j}"><title>${MES[m]} · ${s.nom}: ${f(v)}</title></rect>`;
+    });
+  });
+  svg.innerHTML=g+barras+`<line x1="${L}" y1="${T+ih}" x2="${W-R}" y2="${T+ih}"
+    stroke="var(--line)" stroke-width="1"/>`;
+
+  svg.querySelectorAll(".bara").forEach(b=>{
+    b.addEventListener("pointerenter",()=>{
+      const m=+b.dataset.m, i=D.meses.indexOf(m);
+      tip.innerHTML=`<b>${MES[m]}</b>`+series.map(s=>
+        `<div class="r"><span><i style="background:${s.color}"></i>${s.nom}</span>
+         <span>${f(s.vals[i])}</span></div>`).join("");
+      tip.style.opacity="1";
+      const r=svg.getBoundingClientRect(), tw=tip.offsetWidth||150;
+      const px=(+b.getAttribute("x")+ +b.getAttribute("width")/2)/W*r.width;
+      tip.style.left=Math.min(Math.max(px-tw/2,4), r.width-tw-4)+"px";
+      tip.style.top=Math.max(4, (+b.getAttribute("y"))/H*r.height - tip.offsetHeight - 10)+"px";
+    });
+    b.addEventListener("pointerleave",()=>tip.style.opacity="0");
+  });
 }
 
 function renderAnio(){
   const tp = tipoSel==null ? null : D.tipos[tipoSel];
   document.getElementById("anioSub").textContent = tp
-    ? `Cada sociedad mes a mes, en la pestaña ${tp}. Cambia arriba para ver el otro canal de entrada.`
+    ? `Mes a mes de la sociedad elegida, separando Call y Sala. Abajo, la tabla con todas.`
     : "Sin datos este mes.";
   const th=document.querySelector("#tblAnio thead"), tb=document.querySelector("#tblAnio tbody");
   if(tipoSel==null){ th.innerHTML=""; tb.innerHTML=""; return; }
