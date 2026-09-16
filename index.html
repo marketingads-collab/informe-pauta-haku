@@ -121,10 +121,15 @@ h2{font-size:19px; font-weight:600; letter-spacing:-.015em}
 .soclbl{font-family:var(--font-m); font-size:10.5px; font-weight:500; letter-spacing:.13em;
   text-transform:uppercase; color:var(--ink-3); flex:none}
 .socs{display:flex; gap:6px; flex-wrap:wrap}
+.hint{font-size:11.5px; color:var(--ink-3); font-style:italic; flex:none}
 .legend{display:flex; gap:18px; flex-wrap:wrap; align-items:center;
   font-size:12.5px; color:var(--ink-2); padding:13px 18px 0}
 .legend i, .tip .r i{display:inline-block; width:9px; height:9px; border-radius:2px;
   margin-right:7px; vertical-align:-1px}
+/* la segunda sociedad va rayada: mismo color, distinta textura */
+.legend i.punt, .tip .r i.punt{
+  background-image:repeating-linear-gradient(45deg,
+    rgba(255,255,255,.85) 0 1.5px, transparent 1.5px 3px)}
 .tip .r i{margin-right:6px}
 .legend:empty{display:none}
 
@@ -296,12 +301,13 @@ footer{margin-top:44px; padding-top:20px; border-top:1px solid var(--line);
   <section>
     <div class="shead">
       <h2>Cómo va el mes, día por día</h2>
-      <p>Leads que entraron cada día, separando los que van al call center de los que llegan a la sala. Elige la sociedad y pasa el cursor sobre la gráfica.</p>
+      <p>Leads que entraron cada día, separando los que van al call center de los que llegan a la sala. Puedes elegir dos sociedades para compararlas.</p>
     </div>
     <div class="panel">
       <div class="socbar">
         <span class="soclbl">Sociedad</span>
-        <div class="socs" id="socs" role="group" aria-label="Elegir sociedad"></div>
+        <div class="socs" id="socs" role="group" aria-label="Elegir hasta dos sociedades"></div>
+        <span class="hint">toca dos para comparar</span>
       </div>
       <div class="legend" id="legDia"></div>
       <div class="chart-wrap chart-box">
@@ -326,7 +332,8 @@ footer{margin-top:44px; padding-top:20px; border-top:1px solid var(--line);
       </div>
       <div class="socbar">
         <span class="soclbl">Sociedad</span>
-        <div class="socs" id="socs2" role="group" aria-label="Elegir sociedad"></div>
+        <div class="socs" id="socs2" role="group" aria-label="Elegir hasta dos sociedades"></div>
+        <span class="hint">toca dos para comparar</span>
       </div>
       <div class="legend" id="legAnio"></div>
       <div class="chart-wrap chart-box">
@@ -362,7 +369,8 @@ const pesos = n => "$" + miles(n);
 // datos: meses[m,leads,cpl] · emp[m,e,leads,cpl] · zon[m,e,z,t,leads,cpl] · dia[fecha,e,leads]
 const mesesConDatos = D.meses.slice();
 let mesSel = Math.max(...mesesConDatos);
-let socSel = null;
+let socsSel = [];            // hasta 2 sociedades para comparar
+const MAX_COMP = 2;
 
 const prevMes = m => { const c=mesesConDatos.filter(x=>x<m); return c.length?Math.max(...c):null; };
 
@@ -530,6 +538,29 @@ function pintarTabs(disp){
   });
 }
 
+
+// Con 2 sociedades salen hasta 4 series y solo hay 2 colores validados.
+// Codificacion compuesta: el COLOR sigue siendo el tipo (Call teal / Sala ambar,
+// igual que en todo el informe) y la SOCIEDAD se distingue por el trazo —
+// la primera va solida, la segunda punteada (o rayada, en las barras).
+function seriesComp(fuente){
+  const out=[];
+  socsSel.forEach((e,idx)=>{
+    const porTipo={};
+    fuente(e, porTipo);
+    Object.keys(porTipo).map(Number)
+      .sort((a,b)=>D.tipos[a].localeCompare(D.tipos[b],"es"))
+      .forEach(tp=>out.push({
+        e, t:tp, idx,
+        nom: socsSel.length>1 ? `${D.empresas[e]} · ${D.tipos[tp]}` : D.tipos[tp],
+        color: colorTipo(D.tipos[tp]),
+        dash: idx===1 ? "5 3" : null,
+        datos: porTipo[tp]
+      }));
+  });
+  return out;
+}
+
 // ---------- motor de líneas (1 o más series) ----------
 function dibujar(svg, tip, cats, catTxt, series, fmtY, W, H){
   const L=62,R=76,T=18,B=32, iw=W-L-R, ih=H-T-B;
@@ -556,12 +587,14 @@ function dibujar(svg, tip, cats, catTxt, series, fmtY, W, H){
     if(!pts.length) return;
     const d=pts.map((p,i)=>(i?"L":"M")+p[0].toFixed(1)+" "+p[1].toFixed(1)).join(" ");
     marcas+=`<path d="${d}" fill="none" stroke="${s.color}" stroke-width="2"
-      stroke-linejoin="round" stroke-linecap="round"/>`;
+      ${s.dash?`stroke-dasharray="${s.dash}"`:""} stroke-linejoin="round" stroke-linecap="round"/>`;
     marcas+=pts.map(p=>`<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3"
       fill="${s.color}" stroke="${css("--surface")}" stroke-width="1.5"/>`).join("");
-    const u=pts[pts.length-1];
-    etiquetas+=`<text x="${(u[0]+10).toFixed(1)}" y="${(u[1]+4).toFixed(1)}"
-      style="fill:${s.color};font-family:var(--font-m);font-size:11.5px;font-weight:600">${s.nom}</text>`;
+    if(series.length<=2){
+      const u=pts[pts.length-1];
+      etiquetas+=`<text x="${(u[0]+10).toFixed(1)}" y="${(u[1]+4).toFixed(1)}"
+        style="fill:${s.color};font-family:var(--font-m);font-size:11.5px;font-weight:600">${s.nom}</text>`;
+    }
   });
 
   svg.innerHTML=g+marcas+etiquetas
@@ -597,42 +630,47 @@ const colorTipo = nom => nom==="Call" ? css("--accent") : nom==="Sala" ? css("--
 
 function pintarLeyenda(el, series, extra){
   el.innerHTML = series.length
-    ? series.map((s,i)=>`<span><i style="background:${s.color}"></i>${s.nom}${extra?extra(s,i):""}</span>`).join("")
+    ? series.map((s,i)=>`<span><i class="${s.dash?"punt":""}" style="background:${s.color}${
+        s.dash?`;--c:${s.color}`:""}"></i>${s.nom}${extra?extra(s,i):""}</span>`).join("")
     : "";
 }
 
-// ---------- leads por día, por sociedad y tipo ----------
+// ---------- leads por día ----------
 function renderDia(){
-  const porTipo={};
-  D.dia.forEach(([f,e,t,l])=>{
-    if(e!==socSel || +f.slice(5,7)!==mesSel) return;
-    const d=+f.slice(8,10);
-    (porTipo[t]=porTipo[t]||{})[d]=(porTipo[t][d]||0)+l;
+  const series=seriesComp((e,acc)=>{
+    D.dia.forEach(([f,ee,tp,l])=>{
+      if(ee!==e || +f.slice(5,7)!==mesSel) return;
+      (acc[tp]=acc[tp]||{})[+f.slice(8,10)]=(acc[tp][+f.slice(8,10)]||0)+l;
+    });
   });
-  const dias=[...new Set(Object.values(porTipo).flatMap(o=>Object.keys(o).map(Number)))].sort((a,b)=>a-b);
-  const series=Object.keys(porTipo).map(Number)
-    .sort((a,b)=>D.tipos[a].localeCompare(D.tipos[b]))
-    .map(t=>({nom:D.tipos[t], color:colorTipo(D.tipos[t]),
-              vals:dias.map(d=>porTipo[t][d]??null),
-              tot:Object.values(porTipo[t]).reduce((a,b)=>a+b,0)}));
-  pintarLeyenda(document.getElementById("legDia"), series,
+  const dias=[...new Set(series.flatMap(s=>Object.keys(s.datos).map(Number)))].sort((a,b)=>a-b);
+  const S=series.map(s=>({...s, vals:dias.map(d=>s.datos[d]??null),
+    tot:Object.values(s.datos).reduce((a,b)=>a+b,0)}));
+  pintarLeyenda(document.getElementById("legDia"), S,
     s=>` · <span class="mono">${miles(s.tot)} leads</span>`);
   dibujar(document.getElementById("svgDia"), document.getElementById("tipDia"),
-    dias, d=>`${d} de ${MES[mesSel].toLowerCase()}`, series, miles, 900, 270);
+    dias, d=>`${d} de ${MES[mesSel].toLowerCase()}`, S, miles, 900, 270);
 }
 
 // ---------- selector de sociedad ----------
 function renderSocs(){
   const dis=D.emp.filter(r=>r[0]===mesSel && r[2]>0)
     .sort((a,b)=>b[2]-a[2]).map(r=>r[1]);
-  if(!dis.includes(socSel)) socSel = dis[0] ?? null;
+  socsSel = socsSel.filter(e=>dis.includes(e));
+  if(!socsSel.length && dis.length) socsSel=[dis[0]];
   ["socs","socs2"].forEach(id=>{
     const box=document.getElementById(id); box.innerHTML="";
     dis.slice().sort((a,b)=>D.empresas[a].localeCompare(D.empresas[b],"es")).forEach(e=>{
       const b=document.createElement("button");
       b.className="fbtn"; b.type="button"; b.textContent=D.empresas[e];
-      b.setAttribute("aria-pressed", e===socSel);
-      b.onclick=()=>{ socSel=e; renderSocs(); renderDia(); renderMini(); };
+      b.setAttribute("aria-pressed", socsSel.includes(e));
+      b.onclick=()=>{
+        const i=socsSel.indexOf(e);
+        if(i>=0){ if(socsSel.length>1) socsSel.splice(i,1); }       // no dejar ninguna
+        else if(socsSel.length<MAX_COMP) socsSel.push(e);
+        else socsSel=[socsSel[1], e];                                // entra la nueva, sale la vieja
+        renderSocs(); renderDia(); renderMini();
+      };
       box.appendChild(b);
     });
   });
@@ -643,24 +681,22 @@ function renderSocs(){
 let anioVista = "leads";     // "leads" | "cpl"
 
 
-// ---------- barras por mes de la sociedad elegida ----------
-// Mismo patron que la grafica diaria, pero el eje X son meses y las marcas
-// son barras agrupadas (Call y Sala lado a lado) sobre UN solo eje.
+// ---------- barras por mes ----------
+// Barras agrupadas por mes. Con 2 sociedades, la segunda va rayada en vez de
+// llena: mismo color (el tipo), distinta textura (la sociedad).
 function renderMini(){
   const svg=document.getElementById("svgAnio"), tip=document.getElementById("tipAnio");
   const W=900,H=300, L=66,R=16,T=18,B=38, iw=W-L-R, ih=H-T-B;
-  if(socSel==null){ svg.innerHTML=""; return; }
+  if(!socsSel.length){ svg.innerHTML=""; return; }
 
-  const M={};
-  D.et.forEach(([m,e,t,l,c])=>{ if(e===socSel) (M[t]=M[t]||{})[m]={l,c}; });
-  const tipos=Object.keys(M).map(Number)
-    .sort((a,b)=>D.tipos[a].localeCompare(D.tipos[b],"es"));
-  const series=tipos.map(t=>({t, nom:D.tipos[t], color:colTipo(D.tipos[t]),
-    vals:D.meses.map(m=>{ const x=M[t][m]; return x? (anioVista==="leads"? x.l : x.c) : null; })}));
+  const series=seriesComp((e,acc)=>{
+    D.et.forEach(r=>{ if(r[1]===e) (acc[r[2]]=acc[r[2]]||{})[r[0]]={l:r[3], c:r[4]}; });
+  }).map(s=>({...s, vals:D.meses.map(m=>{ const x=s.datos[m];
+    return x? (anioVista==="leads"? x.l : x.c) : null; })}));
 
   const f = v => v==null? "—" : (anioVista==="leads"? miles(v) : pesos(v));
   pintarLeyenda(document.getElementById("legAnio"), series, s=>{
-    const con=D.meses.map(m=>M[s.t][m]).filter(Boolean);
+    const con=D.meses.map(m=>s.datos[m]).filter(Boolean);
     const tl=con.reduce((a,x)=>a+x.l,0);
     const ti=con.reduce((a,x)=>a+(x.c!=null? x.c*x.l:0),0);
     const tot = anioVista==="leads" ? tl : (tl? Math.round(ti/tl):null);
@@ -674,10 +710,9 @@ function renderMini(){
   const top=Math.ceil(maxV/step)*step || 1;
   const y=v=>T+ih-(v/top)*ih;
 
-  // reparto del ancho: cada mes es un grupo, dentro van las barras con 2px de aire
   const paso=iw/D.meses.length;
-  const gAncho=Math.min(paso*0.68, 74);
-  const bAncho=Math.max(6, (gAncho-(series.length-1)*2)/series.length);
+  const gAncho=Math.min(paso*0.7, 86);
+  const bAncho=Math.max(4, (gAncho-(series.length-1)*2)/series.length);
   const gx=i=>L+paso*i+(paso-gAncho)/2;
 
   let g="";
@@ -687,24 +722,34 @@ function renderMini(){
   D.meses.forEach((m,i)=>{ g+=`<text class="axis-t" x="${(gx(i)+gAncho/2).toFixed(1)}" y="${H-B+19}"
       text-anchor="middle">${MES3[m]}</text>`; });
 
+  // una trama por color, para la sociedad que va rayada
+  const tramas=[...new Set(series.filter(s=>s.dash).map(s=>s.color))]
+    .map((c,i)=>`<pattern id="tr${i}" width="6" height="6" patternUnits="userSpaceOnUse"
+        patternTransform="rotate(45)">
+        <rect width="6" height="6" fill="${c}" opacity=".30"/>
+        <rect width="3" height="6" fill="${c}"/></pattern>`).join("");
+  const trIdx=c=>[...new Set(series.filter(s=>s.dash).map(s=>s.color))].indexOf(c);
+
   let barras="";
   D.meses.forEach((m,i)=>{
     series.forEach((s,j)=>{
       const v=s.vals[i]; if(v==null||v<=0) return;
       const x=gx(i)+j*(bAncho+2), h=Math.max(2, T+ih-y(v));
+      const relleno = s.dash ? `url(#tr${trIdx(s.color)})` : s.color;
       barras+=`<rect class="bara" x="${x.toFixed(1)}" y="${y(v).toFixed(1)}"
-        width="${bAncho.toFixed(1)}" height="${h.toFixed(1)}" rx="3" fill="${s.color}"
-        data-m="${m}" data-s="${j}"><title>${MES[m]} · ${s.nom}: ${f(v)}</title></rect>`;
+        width="${bAncho.toFixed(1)}" height="${h.toFixed(1)}" rx="3" fill="${relleno}"
+        ${s.dash?`stroke="${s.color}" stroke-width="1"`:""}
+        data-i="${i}"><title>${MES[m]} · ${s.nom}: ${f(v)}</title></rect>`;
     });
   });
-  svg.innerHTML=g+barras+`<line x1="${L}" y1="${T+ih}" x2="${W-R}" y2="${T+ih}"
-    stroke="var(--line)" stroke-width="1"/>`;
+  svg.innerHTML=`<defs>${tramas}</defs>`+g+barras
+    +`<line x1="${L}" y1="${T+ih}" x2="${W-R}" y2="${T+ih}" stroke="var(--line)" stroke-width="1"/>`;
 
   svg.querySelectorAll(".bara").forEach(b=>{
     b.addEventListener("pointerenter",()=>{
-      const m=+b.dataset.m, i=D.meses.indexOf(m);
-      tip.innerHTML=`<b>${MES[m]}</b>`+series.map(s=>
-        `<div class="r"><span><i style="background:${s.color}"></i>${s.nom}</span>
+      const i=+b.dataset.i;
+      tip.innerHTML=`<b>${MES[D.meses[i]]}</b>`+series.map(s=>
+        `<div class="r"><span><i class="${s.dash?"punt":""}" style="background:${s.color}"></i>${s.nom}</span>
          <span>${f(s.vals[i])}</span></div>`).join("");
       tip.style.opacity="1";
       const r=svg.getBoundingClientRect(), tw=tip.offsetWidth||150;
@@ -719,7 +764,7 @@ function renderMini(){
 function renderAnio(){
   const tp = tipoSel==null ? null : D.tipos[tipoSel];
   document.getElementById("anioSub").textContent = tp
-    ? `Mes a mes de la sociedad elegida, separando Call y Sala. Abajo, la tabla con todas.`
+    ? `Mes a mes de la sociedad elegida, separando Call y Sala. Toca una segunda para comparar.`
     : "Sin datos este mes.";
   const th=document.querySelector("#tblAnio thead"), tb=document.querySelector("#tblAnio tbody");
   if(tipoSel==null){ th.innerHTML=""; tb.innerHTML=""; return; }
