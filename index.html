@@ -197,6 +197,7 @@ tr.zona:hover{background:var(--line-soft)}
 .tbar .tacts+.tacts{margin-left:auto}
 .fbtn.desc{border-color:var(--accent); color:var(--accent-ink); font-weight:600}
 .fbtn.desc:hover{background:var(--accent-soft)}
+.fbtn:disabled{opacity:.6; cursor:progress}
 
 /* ---------- barras del año ---------- */
 .bara{transition:opacity .12s}
@@ -289,7 +290,7 @@ footer{margin-top:44px; padding-top:20px; border-top:1px solid var(--line);
           <button type="button" class="fbtn" id="ordNom" aria-pressed="true">Nombre</button>
           <button type="button" class="fbtn" id="ordCpl" aria-pressed="false">Costo por lead</button>
           <button type="button" class="fbtn" id="toggleAll" aria-pressed="false">Abrir todas</button>
-          <button type="button" class="fbtn desc" id="btnCsv">Descargar para Excel</button>
+          <button type="button" class="fbtn desc" id="btnCsv">Descargar Excel</button>
         </div>
       </div>
       <div class="tscroll">
@@ -526,9 +527,7 @@ function renderTabla(){
   vr.onclick=()=>{ vista="resultados"; renderTabla(); };
   ve.onclick=()=>{ vista="entrega";    renderTabla(); };
   const bc2=document.getElementById("btnCsv");
-  bc2.onclick=()=>{ descargarCsv();
-    const t0=bc2.textContent; bc2.textContent="Descargado ✓";
-    setTimeout(()=>bc2.textContent=t0, 2200); };
+  bc2.onclick=()=>exportar(bc2);
 }
 
 function pintarTabs(disp){
@@ -825,18 +824,77 @@ function renderAnio(){
 
 
 // ---------- exportar a Excel ----------
-// CSV con separador ";" y BOM: Excel en espanol lo abre con doble clic y respeta
-// las tildes. La linea "sep=;" fuerza el separador aunque el Excel del que abre
-// este configurado con coma.
-function filasCsv(){
-  const out=[["Año","Mes","Sociedad","Zona","Tipo","Canal","Leads","CPL",
-              "Impresiones","Alcance","Frecuencia","Clics enlace","CTR %"]];
-  D.zon.forEach(r=>{
-    const [m,e,z,tp,ca,l,c,imp,alc,clk,fre,ctr] = r;
-    out.push([D.anio, MES[m], D.empresas[e], D.zonas[z], D.tipos[tp], D.canales[ca],
-              l, c ?? "", imp, alc, (fre/100).toFixed(2), clk, (ctr/100).toFixed(2)]);
+// La libreria (~860 KB) se carga SOLO al pulsar el boton: quien nunca exporta
+// no paga ese peso. Si el CDN falla, se cae a CSV para no dejar al usuario sin
+// nada. El CSV lleva BOM y "sep=;" para que Excel en espanol lo abra bien.
+const XLSX_URL = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
+let xlsxPromesa = null;
+
+function cargarXlsx(){
+  if(window.XLSX) return Promise.resolve(window.XLSX);
+  if(xlsxPromesa) return xlsxPromesa;
+  xlsxPromesa = new Promise((ok, fallo)=>{
+    const s=document.createElement("script");
+    s.src=XLSX_URL;
+    s.onload=()=> window.XLSX ? ok(window.XLSX) : fallo(new Error("sin XLSX"));
+    s.onerror=()=> fallo(new Error("no cargo"));
+    document.head.appendChild(s);
+    setTimeout(()=>fallo(new Error("tardo demasiado")), 20000);
   });
-  return out;
+  return xlsxPromesa;
+}
+
+const CAB = ["Año","Mes","Sociedad","Zona","Tipo","Canal","Leads","CPL",
+             "Impresiones","Alcance","Frecuencia","Clics enlace","CTR %"];
+
+function filasDatos(){
+  return D.zon.map(r=>{
+    const [m,e,z,tp,ca,l,c,imp,alc,clk,fre,ctr] = r;
+    return [D.anio, MES[m], D.empresas[e], D.zonas[z], D.tipos[tp], D.canales[ca],
+            l, c, imp, alc, fre/100, clk, ctr/100];
+  });
+}
+
+function nombreArchivo(ext){ return `pauta-haku-${D.hasta}.${ext}`; }
+
+async function descargarExcel(){
+  const XLSX = await cargarXlsx();
+  const datos = filasDatos();
+  const ws = XLSX.utils.aoa_to_sheet([CAB, ...datos]);
+  ws["!cols"] = [{wch:6},{wch:11},{wch:22},{wch:20},{wch:7},{wch:12},
+                 {wch:8},{wch:10},{wch:12},{wch:11},{wch:11},{wch:12},{wch:8}];
+  ws["!autofilter"] = {ref: XLSX.utils.encode_range(
+    {s:{r:0,c:0}, e:{r:datos.length, c:CAB.length-1}})};
+  ws["!freeze"] = {xSplit:0, ySplit:1};
+  // numeros como numeros, con su formato: si van como texto no se pueden sumar
+  const fmt = {7:'"$"#,##0', 8:"#,##0", 9:"#,##0", 10:"0.00", 11:"#,##0", 12:'0.00"%"', 6:"#,##0"};
+  datos.forEach((_,i)=>{
+    Object.entries(fmt).forEach(([c,z])=>{
+      const cel = ws[XLSX.utils.encode_cell({r:i+1, c:+c})];
+      if(cel && cel.t === "n") cel.z = z;
+    });
+  });
+
+  const leeme = XLSX.utils.aoa_to_sheet([
+    ["Informe de pauta — Haku"],
+    [],
+    ["Datos hasta", D.hasta],
+    ["Fuente", "Meta Marketing API · campañas de captación (Call y Sala)"],
+    [],
+    ["Tipo", "Call = lead que entra al call center · Sala = lead que llega a la sala de ventas"],
+    ["Canal", "Formulario = formulario instantáneo de Meta · WhatsApp = conversación iniciada"],
+    ["CPL", "Inversión dividida por leads. Vacío cuando hubo leads sin inversión ese mes."],
+    ["CTR %", "Clics únicos en el enlace sobre alcance, como lo calcula Meta."],
+    [],
+    ["OJO con el Alcance", "Son personas únicas. Al sumar varias zonas se cuenta dos veces a quien vio anuncios de dos zonas distintas: la suma queda por encima del alcance real."],
+    ["OJO con los últimos días", "Meta reajusta a qué día pertenece cada lead hasta 72 horas después, así que las cifras recientes pueden moverse."],
+  ]);
+  leeme["!cols"]=[{wch:22},{wch:96}];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Datos");
+  XLSX.utils.book_append_sheet(wb, leeme, "Léeme");
+  XLSX.writeFile(wb, nombreArchivo("xlsx"));
 }
 
 function descargarCsv(){
@@ -844,18 +902,27 @@ function descargarCsv(){
     const s = String(v ?? "");
     return /[";\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s;
   };
-  // en es-CO el decimal es la coma; el separador ";" evita que choquen
-  const cuerpo = filasCsv().map(f=>f.map(esc).join(";")).join("\r\n");
-  const csv = "sep=;\r\n" + cuerpo;
-  const blob = new Blob(["\uFEFF"+csv], {type:"text/csv;charset=utf-8;"});
-  const a = document.createElement("a");
-  const url = URL.createObjectURL(blob);
-  a.href = url;
-  a.download = `pauta-haku-${D.hasta}.csv`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
+  const cuerpo = [CAB, ...filasDatos()].map(f=>f.map(esc).join(";")).join("\r\n");
+  const blob = new Blob(["\uFEFF" + "sep=;\r\n" + cuerpo], {type:"text/csv;charset=utf-8;"});
+  const a = document.createElement("a"), url = URL.createObjectURL(blob);
+  a.href = url; a.download = nombreArchivo("csv");
+  document.body.appendChild(a); a.click(); a.remove();
   setTimeout(()=>URL.revokeObjectURL(url), 1000);
+}
+
+async function exportar(btn){
+  const t0 = btn.textContent;
+  btn.textContent = "Preparando…"; btn.disabled = true;
+  try{
+    await descargarExcel();
+    btn.textContent = "Descargado ✓";
+  }catch(e){
+    descargarCsv();                       // sin librería, al menos va el CSV
+    btn.textContent = "Descargado (CSV)";
+  }finally{
+    btn.disabled = false;
+    setTimeout(()=>btn.textContent = t0, 2600);
+  }
 }
 
 function render(){
