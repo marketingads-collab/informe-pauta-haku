@@ -265,8 +265,6 @@ footer{margin-top:44px; padding-top:20px; border-top:1px solid var(--line);
 .shead{display:flex; align-items:flex-end; justify-content:space-between; gap:12px 20px; flex-wrap:wrap}
 .shead>div:first-child{flex:1 1 320px; min-width:0}
 .rango{position:relative; flex:none}
-.filtro{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin:18px 0 24px}
-.filtro .rpop{left:0; right:auto}
 .rbtn{display:inline-flex; align-items:center; gap:9px; font-family:var(--font-d); font-size:13px;
   color:var(--ink); background:var(--surface); border:1px solid var(--line); border-radius:8px;
   padding:7px 11px; cursor:pointer; box-shadow:var(--shadow); text-align:left}
@@ -337,8 +335,7 @@ footer{margin-top:44px; padding-top:20px; border-top:1px solid var(--line);
     <div class="eyebrow">Haku Creativo · Pauta Meta</div>
     <h1>Informe sociedades</h1>
     <p class="sub">Cuántos leads entran y qué cuesta cada uno, en cada zona de cada sociedad. Los datos salen directo de Meta — nadie los copia a mano.</p>
-    <p class="corte"><span class="pt"></span>Datos hasta el <b id="corteFecha"></b></p>
-    <div class="filtro"><span class="soclbl">Fechas</span><div id="rangoTop"></div></div>
+    <p class="corte" style="margin-bottom:24px"><span class="pt"></span>Datos hasta el <b id="corteFecha"></b></p>
   </div>
 </div>
 
@@ -348,8 +345,9 @@ footer{margin-top:44px; padding-top:20px; border-top:1px solid var(--line);
     <div class="shead">
       <div>
         <h2>Cada sociedad, zona por zona</h2>
-        <p>Elige Call o Sala en las pestañas y toca una sociedad para ver sus zonas. La flecha compara el costo por lead contra los mismos días justo antes de las fechas elegidas arriba.</p>
+        <p>Elige Call o Sala en las pestañas y toca una sociedad para ver sus zonas. La flecha compara el costo por lead contra los mismos días justo antes de las fechas elegidas.</p>
       </div>
+      <div class="rango" data-rango></div>
     </div>
     <div class="panel">
       <div class="tabs" id="tabs" role="group" aria-label="Tipo de lead"></div>
@@ -383,6 +381,7 @@ footer{margin-top:44px; padding-top:20px; border-top:1px solid var(--line);
         <h2>Día por día</h2>
         <p>Leads que entraron cada día, separando los que van al call center de los que llegan a la sala. Puedes elegir dos sociedades para compararlas.</p>
       </div>
+      <div class="rango" data-rango></div>
     </div>
     <div class="panel">
       <div class="socbar">
@@ -406,6 +405,7 @@ footer{margin-top:44px; padding-top:20px; border-top:1px solid var(--line);
         <h2>Mes a mes por sociedad</h2>
         <p id="anioSub"></p>
       </div>
+      <div class="rango" data-rango></div>
     </div>
     <div class="panel">
       <div class="tbar">
@@ -531,9 +531,9 @@ document.addEventListener("keydown", ev=>{
 
 // Como en Meta: rangos rapidos a la izquierda, calendario a la derecha, y nada
 // cambia hasta pulsar "Actualizar". Primer clic = inicio, segundo clic = fin.
-function crearRango(el, presetInicial, alCambiar){
-  const p0 = PRESETS.find(p=>p.id===presetInicial && p.ok) || PRESETS.find(p=>p.id==="anio");
-  const st = {d:p0.d, h:p0.h};
+// Hay un selector en cada seccion (para no subir a cambiar la fecha) pero todos
+// comparten el mismo rango "st": cambiar uno cambia el informe entero.
+function crearRango(el, st, alCambiar){
   let tmp=null, hover=null, vista=null;
   el.className="rango";
   el.innerHTML = `<button type="button" class="rbtn" aria-haspopup="dialog" aria-expanded="false">
@@ -631,12 +631,12 @@ function crearRango(el, presetInicial, alCambiar){
     });
     pop.querySelector("[data-a=no]").onclick=()=>{ cerrar(); btn.focus(); };
     pop.querySelector("[data-a=si]").onclick=()=>{
-      st.d=tmp.d; st.h=tmp.h; cerrar(); etiqueta(); btn.focus(); alCambiar();
+      st.d=tmp.d; st.h=tmp.h; cerrar(); btn.focus(); alCambiar();
     };
   }
 
   btn.onclick = () => pop.hidden ? abrir() : cerrar();
-  const api = { el, btn, cerrar, get d(){ return st.d; }, get h(){ return st.h; } };
+  const api = { el, btn, cerrar, etiqueta };
   etiqueta();
   return api;
 }
@@ -657,9 +657,11 @@ function deltaHtml(act, ant, subirBueno=false){
 }
 
 // ---------- 1 · tabla sociedades > zonas ----------
-// Un solo rango para todo el informe: moverlo arriba cambia todas las secciones.
-const R1 = crearRango(document.getElementById("rangoTop"), "mes", ()=>{ abiertas.clear(); render(); });
+// Un solo rango para todo el informe, con un selector en cada seccion.
+const R1 = (p=>({d:p.d, h:p.h}))(PRESETS.find(p=>p.id==="mes" && p.ok) || PRESETS.find(p=>p.id==="anio"));
 const R2 = R1, R3 = R1;
+const SELECTORES = [...document.querySelectorAll("[data-rango]")].map(el=>
+  crearRango(el, R1, ()=>{ SELECTORES.forEach(s=>s.etiqueta()); abiertas.clear(); render(); }));
 const abiertas = new Set();          // sociedades desplegadas
 let tipoSel = null;                  // pestaña activa: Call / Sala
 let orden = "nombre";                // "nombre" = fijo · "cpl" = del mas barato al mas caro
