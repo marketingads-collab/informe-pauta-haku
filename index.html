@@ -67,7 +67,7 @@ h1,h2{text-wrap:balance; margin:0}
 .mono{font-family:var(--font-m); font-variant-numeric:tabular-nums}
 
 /* ---------- cabecera ---------- */
-.top{background:var(--surface); border-bottom:1px solid var(--line); position:relative; overflow:hidden}
+.top{background:var(--surface); border-bottom:1px solid var(--line); position:relative; z-index:5}
 .top::after{
   content:""; position:absolute; inset:0 0 auto auto; width:38%; height:100%;
   background:repeating-linear-gradient(115deg, var(--accent) 0 2px, transparent 2px 13px);
@@ -265,6 +265,8 @@ footer{margin-top:44px; padding-top:20px; border-top:1px solid var(--line);
 .shead{display:flex; align-items:flex-end; justify-content:space-between; gap:12px 20px; flex-wrap:wrap}
 .shead>div:first-child{flex:1 1 320px; min-width:0}
 .rango{position:relative; flex:none}
+.filtro{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin:18px 0 24px}
+.filtro .rpop{left:0; right:auto}
 .rbtn{display:inline-flex; align-items:center; gap:9px; font-family:var(--font-d); font-size:13px;
   color:var(--ink); background:var(--surface); border:1px solid var(--line); border-radius:8px;
   padding:7px 11px; cursor:pointer; box-shadow:var(--shadow); text-align:left}
@@ -335,7 +337,8 @@ footer{margin-top:44px; padding-top:20px; border-top:1px solid var(--line);
     <div class="eyebrow">Haku Creativo · Pauta Meta</div>
     <h1>Informe sociedades</h1>
     <p class="sub">Cuántos leads entran y qué cuesta cada uno, en cada zona de cada sociedad. Los datos salen directo de Meta — nadie los copia a mano.</p>
-    <p class="corte" style="margin-bottom:24px"><span class="pt"></span>Datos hasta el <b id="corteFecha"></b></p>
+    <p class="corte"><span class="pt"></span>Datos hasta el <b id="corteFecha"></b></p>
+    <div class="filtro"><span class="soclbl">Fechas</span><div id="rangoTop"></div></div>
   </div>
 </div>
 
@@ -345,9 +348,8 @@ footer{margin-top:44px; padding-top:20px; border-top:1px solid var(--line);
     <div class="shead">
       <div>
         <h2>Cada sociedad, zona por zona</h2>
-        <p>Elige Call o Sala en las pestañas y toca una sociedad para ver sus zonas. La flecha compara el costo por lead contra los mismos días justo antes de las fechas elegidas.</p>
+        <p>Elige Call o Sala en las pestañas y toca una sociedad para ver sus zonas. La flecha compara el costo por lead contra los mismos días justo antes de las fechas elegidas arriba.</p>
       </div>
-      <div id="rango1"></div>
     </div>
     <div class="panel">
       <div class="tabs" id="tabs" role="group" aria-label="Tipo de lead"></div>
@@ -381,7 +383,6 @@ footer{margin-top:44px; padding-top:20px; border-top:1px solid var(--line);
         <h2>Día por día</h2>
         <p>Leads que entraron cada día, separando los que van al call center de los que llegan a la sala. Puedes elegir dos sociedades para compararlas.</p>
       </div>
-      <div id="rango2"></div>
     </div>
     <div class="panel">
       <div class="socbar">
@@ -405,7 +406,6 @@ footer{margin-top:44px; padding-top:20px; border-top:1px solid var(--line);
         <h2>Mes a mes por sociedad</h2>
         <p id="anioSub"></p>
       </div>
-      <div id="rango3"></div>
     </div>
     <div class="panel">
       <div class="tbar">
@@ -657,9 +657,9 @@ function deltaHtml(act, ant, subirBueno=false){
 }
 
 // ---------- 1 · tabla sociedades > zonas ----------
-const R1 = crearRango(document.getElementById("rango1"), "mes", ()=>{
-  abiertas.clear(); renderTabla(); renderAnio();
-});
+// Un solo rango para todo el informe: moverlo arriba cambia todas las secciones.
+const R1 = crearRango(document.getElementById("rangoTop"), "mes", ()=>{ abiertas.clear(); render(); });
+const R2 = R1, R3 = R1;
 const abiertas = new Set();          // sociedades desplegadas
 let tipoSel = null;                  // pestaña activa: Call / Sala
 let orden = "nombre";                // "nombre" = fijo · "cpl" = del mas barato al mas caro
@@ -907,7 +907,7 @@ function pintarLeyenda(el, series, extra){
 }
 
 // ---------- sociedades y zonas de una grafica ----------
-// Cada grafica tiene su propio rango, asi que tambien su propia seleccion.
+// Las dos graficas comparten sociedades y zona: elegir en una cambia la otra.
 // g = {sel:[sociedades], zona:null|indice}; dispara pintar() al cambiar.
 const MAX_COMP = 2;
 function pintarFiltros(g, filas, idSocs, idZona, pintar){
@@ -942,12 +942,11 @@ function pintarFiltros(g, filas, idSocs, idZona, pintar){
 }
 
 // ---------- 2 · leads por día ----------
-const R2 = crearRango(document.getElementById("rango2"), "mes", ()=>renderDia());
 const G2 = {sel:[], zona:null};
 
 function renderDia(){
   const filas=enRango(R2);
-  pintarFiltros(G2, filas, "socs", "selZona1", renderDia);
+  pintarFiltros(G2, filas, "socs", "selZona1", renderGraficas);
   const series=seriesComp(G2.sel, (e,acc)=>{
     filas.forEach(r=>{
       if(r.e!==e || !r.l) return;
@@ -967,8 +966,8 @@ function renderDia(){
 
 
 // ---------- 3 · mes a mes por sociedad ----------
-const R3 = crearRango(document.getElementById("rango3"), "anio", ()=>{ renderAnio(); renderMini(); });
-const G3 = {sel:[], zona:null};
+const G3 = G2;
+function renderGraficas(){ renderDia(); renderMini(); }
 let anioVista = "leads";     // "leads" | "cpl"
 
 // meses que toca el rango ("AAAA-MM"); los de las puntas pueden ir incompletos
@@ -986,7 +985,7 @@ function renderMini(){
   const svg=document.getElementById("svgAnio"), tip=document.getElementById("tipAnio");
   const W=900,H=300, L=66,R=16,T=18,B=38, iw=W-L-R, ih=H-T-B;
   const filas=enRango(R3), MS=mesesDe(R3);
-  pintarFiltros(G3, filas, "socs2", "selZona2", renderMini);
+  pintarFiltros(G3, filas, "socs2", "selZona2", renderGraficas);
   if(!G3.sel.length){
     pintarLeyenda(document.getElementById("legAnio"), []);
     svg.innerHTML=`<text x="${W/2}" y="${H/2}" text-anchor="middle" class="axis-t">Sin datos en estas fechas</text>`;
