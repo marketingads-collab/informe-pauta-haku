@@ -1,0 +1,667 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="referrer" content="no-referrer">
+<title>Pedidos de leads Haku</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root{
+  color-scheme: light;
+  --ground:#F2F5F6; --surface:#FFFFFF; --surface-2:#F7F9FA;
+  --line:#DCE4E7; --line-soft:#E9EFF1;
+  --ink:#0E1B20; --ink-2:#56686F; --ink-3:#85979E;
+  --accent:#008E9B; --accent-soft:#E0F2F4; --accent-ink:#00707B;
+  --good:#1C7A55; --good-soft:#E2F1EA;
+  --warn:#9E6400; --warn-soft:#F8EFDC;
+  --bad:#B63A2C;  --bad-soft:#F9E7E4;
+  --shadow:0 1px 2px rgba(14,27,32,.06), 0 8px 24px -12px rgba(14,27,32,.14);
+  --font-d:"Archivo",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --font-m:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --ground:#0C1215; --surface:#151D21; --surface-2:#1B252A;
+    --line:#2A3940; --line-soft:#212D33;
+    --ink:#E9F1F3; --ink-2:#9BADB4; --ink-3:#74878F;
+    --accent:#00A0B0; --accent-soft:#0C2F35; --accent-ink:#34BCC9;
+    --good:#3FA57A; --good-soft:#12291F;
+    --warn:#C08A1E; --warn-soft:#2B2210;
+    --bad:#D9705F; --bad-soft:#2E1714;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --ground:#0C1215; --surface:#151D21; --surface-2:#1B252A;
+  --line:#2A3940; --line-soft:#212D33;
+  --ink:#E9F1F3; --ink-2:#9BADB4; --ink-3:#74878F;
+  --accent:#00A0B0; --accent-soft:#0C2F35; --accent-ink:#34BCC9;
+  --good:#3FA57A; --good-soft:#12291F;
+  --warn:#C08A1E; --warn-soft:#2B2210;
+  --bad:#D9705F; --bad-soft:#2E1714;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0; background:var(--ground); color:var(--ink);
+  font-family:var(--font-d); font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px; margin:0 auto; padding-inline:16px; padding-block:0 64px}
+h1,h2{text-wrap:balance; margin:0}
+.mono,.num{font-family:var(--font-m); font-variant-numeric:tabular-nums}
+
+/* ---------- cabecera ---------- */
+.top{background:var(--surface); border-bottom:1px solid var(--line); position:relative}
+.top::after{content:""; position:absolute; inset:0 0 auto auto; width:38%; height:100%;
+  background:repeating-linear-gradient(115deg, var(--accent) 0 2px, transparent 2px 13px);
+  opacity:.10; pointer-events:none}
+.top-in{max-width:1180px; margin:0 auto; padding:24px 16px 0; position:relative; z-index:1}
+.eyebrow{font-family:var(--font-m); font-size:11px; font-weight:500;
+  letter-spacing:.16em; text-transform:uppercase; color:var(--accent-ink)}
+h1{font-size:clamp(26px,4.4vw,38px); font-weight:700; letter-spacing:-.025em; margin-top:6px}
+.sub{color:var(--ink-2); font-size:14.5px; max-width:66ch; margin:8px 0 0}
+.metas{display:flex; gap:8px; flex-wrap:wrap; margin:14px 0 0}
+.corte{display:inline-flex; align-items:center; gap:8px;
+  font-family:var(--font-m); font-size:12px; color:var(--ink-2);
+  background:var(--surface-2); border:1px solid var(--line); padding:5px 11px 5px 9px; border-radius:20px}
+.corte b{color:var(--ink); font-weight:600}
+.corte .pt{width:7px; height:7px; border-radius:50%; background:var(--accent); flex:none}
+.corte.yo .pt{background:var(--good)}
+.gtabs{display:flex; gap:2px; margin-top:18px; overflow-x:auto}
+.gtab{font-family:var(--font-d); font-size:14.5px; font-weight:600; color:var(--ink-3);
+  background:none; border:0; border-bottom:2px solid transparent; padding:11px 14px 12px;
+  cursor:pointer; white-space:nowrap}
+.gtab:hover{color:var(--ink-2)}
+.gtab[aria-pressed="true"]{color:var(--accent-ink); border-bottom-color:var(--accent)}
+.gtab:focus-visible{outline:2px solid var(--accent); outline-offset:-3px; border-radius:4px}
+.gtab .tabn{font-family:var(--font-m); font-size:11px; font-weight:500; margin-left:6px;
+  padding:1px 6px; border-radius:20px; background:var(--surface-2); border:1px solid var(--line); color:var(--ink-3)}
+.gtab .mio{font-family:var(--font-m); font-size:10px; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--good); margin-left:6px}
+
+/* ---------- secciones ---------- */
+section{margin-top:34px}
+.shead{display:flex; align-items:flex-end; justify-content:space-between; gap:12px 20px; flex-wrap:wrap; margin-bottom:14px}
+.shead>div:first-child{flex:1 1 320px; min-width:0}
+h2{font-size:19px; font-weight:600; letter-spacing:-.015em}
+.shead p{margin:4px 0 0; color:var(--ink-2); font-size:13.5px; max-width:70ch}
+.panel{background:var(--surface); border:1px solid var(--line); border-radius:10px; box-shadow:var(--shadow)}
+
+/* meses */
+.meses{display:flex; gap:6px; flex-wrap:wrap}
+.fbtn{font-family:var(--font-m); font-size:11.5px; letter-spacing:.03em; color:var(--ink-2);
+  background:var(--surface-2); border:1px solid var(--line); border-radius:20px; padding:5px 12px; cursor:pointer}
+.fbtn:hover{border-color:var(--ink-3); color:var(--ink)}
+.fbtn[aria-pressed="true"]{background:var(--ink); color:var(--surface); border-color:var(--ink)}
+.fbtn:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+.fbtn.pri{border-color:var(--accent); color:var(--accent-ink); font-weight:600; background:var(--surface)}
+.fbtn.pri:hover{background:var(--accent-soft)}
+.fbtn.mal{color:var(--bad)}
+.fbtn.mal:hover{border-color:var(--bad); background:var(--bad-soft)}
+.fbtn:disabled{opacity:.5; cursor:not-allowed}
+
+/* KPIs */
+.kpis{display:grid; grid-template-columns:repeat(5,1fr); gap:0}
+.kpi{padding:14px 18px; border-right:1px solid var(--line-soft)}
+.kpi:last-child{border-right:0}
+.kpi .k{font-family:var(--font-m); font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-3)}
+.kpi .v{font-family:var(--font-m); font-variant-numeric:tabular-nums; font-size:24px; font-weight:600; letter-spacing:-.03em; margin-top:2px}
+.kpi .s{font-size:12px; color:var(--ink-2)}
+@media (max-width:760px){ .kpis{grid-template-columns:repeat(2,1fr)} .kpi{border-bottom:1px solid var(--line-soft)} .kpi:nth-child(2n){border-right:0} }
+
+/* ---------- tabla ---------- */
+.tscroll{overflow-x:auto}
+table{width:100%; border-collapse:collapse; font-size:13.5px}
+th,td{text-align:right; padding:9px 12px; white-space:nowrap; vertical-align:middle}
+th.l,td.l{text-align:left}
+th.c,td.c{text-align:center}
+thead th{font-family:var(--font-m); font-size:10.5px; font-weight:500; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--ink-3); border-bottom:1px solid var(--line); background:var(--surface)}
+tbody tr{border-bottom:1px solid var(--line-soft)}
+tr.soc{background:var(--surface-2); border-top:1px solid var(--line)}
+tr.soc td{font-weight:600; padding-top:11px; padding-bottom:11px}
+tr.soc td.num{font-weight:600}
+tr.ped:hover{background:var(--surface-2)}
+tr.ped.off td:not(.keep){opacity:.55}
+.zn{font-weight:600}
+.an{display:block; font-family:var(--font-m); font-size:11px; color:var(--ink-3); margin-top:1px; white-space:normal; word-break:break-all; max-width:300px}
+.flags{display:flex; gap:4px; flex-wrap:wrap; margin-top:4px}
+.flag{font-family:var(--font-m); font-size:10.5px; padding:1.5px 6px; border-radius:4px; white-space:nowrap}
+.flag.bad{background:var(--bad-soft); color:var(--bad)}
+.flag.warn{background:var(--warn-soft); color:var(--warn)}
+.flag.info{background:var(--accent-soft); color:var(--accent-ink)}
+
+/* interruptor prendida/apagada */
+.sw{display:inline-flex; align-items:center; gap:8px; background:none; border:0; padding:4px; cursor:pointer;
+  font:inherit; font-size:12.5px; color:var(--ink-2)}
+.sw i{position:relative; width:34px; height:20px; border-radius:20px; background:var(--line); transition:background .15s; flex:none}
+.sw i::after{content:""; position:absolute; top:2px; left:2px; width:16px; height:16px; border-radius:50%;
+  background:#fff; box-shadow:0 1px 2px rgba(0,0,0,.25); transition:transform .15s}
+.sw[aria-checked="true"] i{background:var(--good)}
+.sw[aria-checked="true"] i::after{transform:translateX(14px)}
+.sw[aria-checked="true"]{color:var(--good); font-weight:600}
+.sw:disabled{cursor:default}
+.sw:focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:20px}
+
+input.nd{width:74px; font-family:var(--font-m); font-size:14px; font-variant-numeric:tabular-nums; text-align:right;
+  color:var(--ink); background:var(--surface); border:1px solid var(--line); border-radius:6px; padding:5px 8px}
+input.nd:hover:not(:disabled){border-color:var(--ink-3)}
+input.nd:focus{outline:2px solid var(--accent); outline-offset:0; border-color:var(--accent)}
+input.nd:disabled{background:transparent; border-color:transparent; color:var(--ink)}
+
+.dif.neg{color:var(--bad)} .dif.pos{color:var(--good)}
+.cum{display:flex; align-items:center; gap:8px; justify-content:flex-end; min-width:150px}
+.cum .b{position:relative; width:74px; height:7px; border-radius:4px; background:var(--line-soft); overflow:hidden; flex:none}
+.cum .b i{position:absolute; inset:0 auto 0 0; border-radius:4px}
+.cum .b u{position:absolute; top:-2px; bottom:-2px; width:1.5px; background:var(--ink-3); left:calc(100% / 1.3)}
+.sem{font-family:var(--font-m); font-size:10.5px; font-weight:600; padding:2px 7px; border-radius:4px; min-width:76px; text-align:center}
+.sem.bad{background:var(--bad-soft); color:var(--bad)}
+.sem.good{background:var(--good-soft); color:var(--good)}
+.sem.warn{background:var(--warn-soft); color:var(--warn)}
+.sem.na{color:var(--ink-3)}
+
+.det{background:none; border:1px solid transparent; border-radius:6px; color:var(--ink-3); cursor:pointer; padding:4px 7px; font:inherit; font-size:12px}
+.det:hover{border-color:var(--line); color:var(--ink)}
+.det svg{width:9px; height:9px; transition:transform .15s; vertical-align:0}
+.det[aria-expanded="true"] svg{transform:rotate(90deg)}
+.det:focus-visible{outline:2px solid var(--accent); outline-offset:1px}
+
+tr.detrow > td{background:var(--surface-2); white-space:normal; text-align:left; padding:14px 18px 16px 18px}
+.dgrid{display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0,1fr) minmax(0,1fr); gap:18px 26px}
+@media (max-width:860px){ .dgrid{grid-template-columns:1fr} }
+.dlbl{font-family:var(--font-m); font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-3); margin-bottom:6px}
+.perfs{display:flex; flex-wrap:wrap; gap:6px}
+.pchk{font:inherit; font-size:12.5px; color:var(--ink-2); background:var(--surface); border:1px solid var(--line);
+  border-radius:20px; padding:4px 11px; cursor:pointer}
+.pchk[aria-pressed="true"]{background:var(--accent-soft); border-color:var(--accent); color:var(--accent-ink); font-weight:600}
+.pchk:disabled{cursor:default}
+.pchk:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+textarea.cob{width:100%; min-height:62px; resize:vertical; font:inherit; font-size:13.5px; color:var(--ink);
+  background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:8px 10px}
+textarea.cob:focus{outline:2px solid var(--accent); outline-offset:0}
+textarea.cob:disabled{background:transparent}
+.mhis{list-style:none; margin:0; padding:0; font-size:12.5px; color:var(--ink-2); max-height:150px; overflow:auto}
+.mhis li{padding:3px 0; border-bottom:1px dashed var(--line-soft)}
+.mhis b{color:var(--ink); font-weight:600}
+.dacts{display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; align-items:center}
+
+/* agregar */
+.add{display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; padding:14px 18px; border-top:1px solid var(--line)}
+.add label{display:flex; flex-direction:column; gap:4px; font-family:var(--font-m); font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-3)}
+.add select{font-family:var(--font-d); font-size:13.5px; color:var(--ink); background:var(--surface);
+  border:1px solid var(--line); border-radius:8px; padding:6px 10px; min-width:200px; max-width:100%}
+.add .grow{flex:1 1 280px}
+.add .grow select{width:100%}
+
+/* historial */
+.his{list-style:none; margin:0; padding:0}
+.his li{display:grid; grid-template-columns:150px 1fr; gap:4px 16px; padding:10px 18px; border-bottom:1px solid var(--line-soft); font-size:13.5px}
+.his li:last-child{border-bottom:0}
+.his .cu{font-family:var(--font-m); font-size:12px; color:var(--ink-3)}
+.his .qu b{font-weight:600}
+.his .gr{font-family:var(--font-m); font-size:10.5px; color:var(--ink-3); margin-left:6px}
+@media (max-width:620px){ .his li{grid-template-columns:1fr} }
+.vac{padding:28px 18px; color:var(--ink-3); text-align:center; font-size:14px}
+
+/* estado de guardado */
+.save{position:fixed; right:16px; bottom:16px; z-index:50; font-family:var(--font-m); font-size:12.5px;
+  background:var(--ink); color:var(--surface); padding:8px 14px; border-radius:20px; box-shadow:var(--shadow);
+  opacity:0; transform:translateY(8px); transition:opacity .15s, transform .15s; pointer-events:none; max-width:calc(100vw - 32px)}
+.save.on{opacity:1; transform:none}
+.save.err{background:var(--bad); color:#fff}
+
+.note{display:flex; gap:11px; align-items:flex-start; margin-top:14px; padding:13px 15px;
+  background:var(--warn-soft); border-radius:8px; font-size:13px; color:var(--ink-2); line-height:1.5}
+.note b{color:var(--ink); font-weight:600}
+.note .m{font-family:var(--font-m); color:var(--warn); font-weight:600; font-size:12px; letter-spacing:.08em; flex:none; padding-top:1px}
+footer{margin-top:40px; padding-top:18px; border-top:1px solid var(--line); color:var(--ink-3); font-size:12.5px}
+.gate{max-width:520px; margin:60px auto; text-align:center; padding:30px 24px}
+.gate h2{margin-bottom:8px}
+.gate p{color:var(--ink-2)}
+@media (max-width:430px){ table{font-size:12.5px} th,td{padding:8px 9px} }
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <div class="top-in">
+    <div class="eyebrow">Haku Creativo · Pauta Meta</div>
+    <h1>Pedidos de leads</h1>
+    <p class="sub">Aquí cada call pide cuántos leads diarios quiere por conjunto de anuncios, y ve cuántos le ha entregado Meta. Cada cambio queda firmado con nombre y hora.</p>
+    <div class="metas">
+      <span class="corte yo" id="yoBadge" hidden><span class="pt"></span><span id="yoTxt"></span></span>
+      <span class="corte"><span class="pt"></span>Leads de Meta hasta el <b id="corteFecha"></b></span>
+    </div>
+    <div class="gtabs" id="gtabs" role="group" aria-label="Grupo"></div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div id="gate" class="panel gate" hidden></div>
+
+  <div id="app" hidden>
+    <section>
+      <div class="shead">
+        <div>
+          <h2 id="tResumen">Resumen</h2>
+          <p id="pResumen"></p>
+        </div>
+        <div class="meses" id="meses" role="group" aria-label="Mes"></div>
+      </div>
+      <div class="panel kpis" id="kpis"></div>
+    </section>
+
+    <section>
+      <div class="shead">
+        <div>
+          <h2>Conjunto por conjunto</h2>
+          <p id="pTabla"></p>
+        </div>
+        <div class="meses">
+          <button type="button" class="fbtn" id="bAbrir">Abrir todos los detalles</button>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="tscroll">
+          <table id="tbl">
+            <thead><tr>
+              <th class="l">Sociedad · conjunto</th>
+              <th class="l">Estado</th>
+              <th class="num" title="Leads diarios que pide el call">Pide / día</th>
+              <th class="num" title="Lo pedido, día por día, en el mes elegido">Esperado</th>
+              <th class="num">Llevamos</th>
+              <th class="num">Diferencia</th>
+              <th class="num">Cumplimiento</th>
+              <th></th>
+            </tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="add" id="add"></div>
+      </div>
+      <div class="note"><span class="m">OJO</span><span><b>El esperado respeta cada cambio.</b> Si un conjunto se prendió el 10 o pasó de 20 a 30 diarios el 15, el esperado cuenta 0 hasta el 10 y 30 diarios desde el 15. Meta sigue ajustando los leads de los últimos 3 días, así que el dato de ayer todavía puede moverse un poco.</span></div>
+    </section>
+
+    <section>
+      <div class="shead">
+        <div>
+          <h2>Quién cambió qué</h2>
+          <p>Todos los cambios, del más reciente al más antiguo.</p>
+        </div>
+        <div class="meses">
+          <button type="button" class="fbtn" id="bHisTodos" aria-pressed="false">Ver todos los grupos</button>
+        </div>
+      </div>
+      <div class="panel"><ul class="his" id="his"></ul></div>
+    </section>
+
+    <footer>Los pedidos se guardan al instante. Los leads de Meta se actualizan todos los días a las 6 a. m. y llegan hasta el día anterior.</footer>
+  </div>
+</div>
+<div class="save" id="save" role="status" aria-live="polite"></div>
+
+<script>
+const D = {"hasta":"2026-09-23","desde":"2026-09-01","fechas":["2026-09-01","2026-09-02","2026-09-03","2026-09-04","2026-09-05","2026-09-06","2026-09-07","2026-09-08","2026-09-09","2026-09-10","2026-09-11","2026-09-12","2026-09-13","2026-09-14","2026-09-15","2026-09-16","2026-09-17","2026-09-18","2026-09-19","2026-09-20","2026-09-21","2026-09-22","2026-09-23"],"camps":["Aburramotos_Formulario_Call_AON","Aburramotos_Formulario_Call_AON_Med","CentroMotos_Formulario_Call_AON","CrediMotos_Formulario_Call_AON","CrediMovil_Formulario_Call_AON","MotoCredito_Formulario_Call_AON","MotoMovil_Formulario_Call_AON","MotoRacing_Formulario_Call_AON","MotoRacing_Formulario_Call_EXPO Septiembre","Motos de la Capital_Formulario_Call_AON","Motos de la Capital_Formulario_Call_AON-Total - Septiembre 2026","Motos de los Andes_Formulario_Call_AON - 2.0","Motos del Darien_Formulario_Call_AON","Motowing_Formulario_Call_AON","Sabanamotos_Formulario_Call_AON"],"adsets":[["META_PF_ SanJose_Sabanamotos","Sabanamotos","SanJose"],["META_PF_Acacias_Motoracing","Motoracing","Acacias"],["META_PF_Antioquia_Credimotos","Credimotos","Antioquia"],["META_PF_Antioquia_Motocredito","Motocredito","Antioquia"],["META_PF_AreaMetropolitana_Aburramotos","Aburramotos","AreaMetropolitana"],["META_PF_AreaMetropolitana_Capital","Motos de la Capital","AreaMetropolitana"],["META_PF_AreaMetropolitana_Motos del Darien","Motos del Darien","AreaMetropolitana"],["META_PF_Bello_Aburramotos","Aburramotos","Bello"],["META_PF_Bello_Motos de los Andes","Motos de los Andes","Bello"],["META_PF_BogotaCentro_Motos de los Andes","Motos de los Andes","BogotaCentro"],["META_PF_BogotaCentro_Sabanamotos","Sabanamotos","BogotaCentro"],["META_PF_Bogota_Centromotos","Centromotos","Bogota"],["META_PF_Bogota_Credimotos","Credimotos","Bogota"],["META_PF_Bogota_Credimovil","Credimovil","Bogota"],["META_PF_Bogota_Motomovil","Motomovil","Bogota"],["META_PF_Bogota_Motoracing","Motoracing","Bogota"],["META_PF_Bogotá_Capital","Motos de la Capital","Bogotá"],["META_PF_Boyaca_Credimotos","Credimotos","Boyaca"],["META_PF_Boyaca_Credimovil","Credimovil","Boyaca"],["META_PF_CaldasSur_Aburramotos","Aburramotos","CaldasSur"],["META_PF_Cumaral_Motoracing","Motoracing","Cumaral"],["META_PF_Cundinamarca_Centromotos","Centromotos","Cundinamarca"],["META_PF_Cundinamarca_Credimovil","Credimovil","Cundinamarca"],["META_PF_Cundinamarca_Motowing","Motowing","Cundinamarca"],["META_PF_Envigado_Motos de los Andes","Motos de los Andes","Envigado"],["META_PF_Facatativa_Credimotos","Credimotos","Facatativa"],["META_PF_Funza_Sabanamotos","Sabanamotos","Funza"],["META_PF_Fusagasuga_Credimotos","Credimotos","Fusagasuga"],["META_PF_GranadaMeta_Sabanamotos","Sabanamotos","GranadaMeta"],["META_PF_Granada_Motoracing","Motoracing","Granada"],["META_PF_Llanos_Centromotos","Centromotos","Llanos"],["META_PF_Llanos_Credimotos","Credimotos","Llanos"],["META_PF_Llanos_Credimovil","Credimovil","Llanos"],["META_PF_Llanos_Motos de los Andes","Motos de los Andes","Llanos"],["META_PF_Llanos_Sabanamotos","Sabanamotos","Llanos"],["META_PF_Medellin_Motoracing","Motoracing","Medellin"],["META_PF_Meissen_Motos de los Andes","Motos de los Andes","Meissen"],["META_PF_Melgar_Credimotos","Credimotos","Melgar"],["META_PF_Melgar_Motomovil","Motomovil","Melgar"],["META_PF_Meta_Credimovil","Credimovil","Meta"],["META_PF_Meta_Motomovil","Motomovil","Meta"],["META_PF_Santander_Credimovil","Credimovil","Santander"],["META_PF_Soacha_Motowing","Motowing","Soacha"],["META_PF_Uraba_Credimotos","Credimotos","Uraba"],["META_PF_Uraba_Motocredito","Motocredito","Uraba"],["META_PF_Villavicencio_Credimotos","Credimotos","Villavicencio"],["META_PF_Villavicencio_Motoracing","Motoracing","Villavicencio"],["META_PF_Yopal_Motomovil","Motomovil","Yopal"]],"d":[[0,14,4,1],[0,14,5,5],[0,14,6,2],[0,14,7,1],[0,14,8,4],[0,14,9,4],[0,14,10,0],[0,14,11,0],[0,14,12,7],[0,14,13,5],[0,14,14,3],[0,14,15,3],[0,14,16,1],[0,14,20,5],[0,14,21,5],[0,14,22,2],[1,7,7,3],[1,7,8,11],[1,7,9,3],[1,7,10,6],[1,7,11,13],[1,7,12,14],[1,7,13,9],[1,7,14,4],[1,7,15,7],[1,7,16,13],[1,7,17,15],[1,7,18,4],[1,7,19,1],[1,7,20,16],[1,7,21,5],[1,7,22,10],[1,8,17,5],[1,8,18,12],[2,3,0,0],[2,3,2,19],[2,3,3,42],[2,3,4,69],[2,3,5,62],[2,3,6,79],[2,3,7,105],[2,3,8,88],[2,3,9,68],[2,3,10,87],[2,3,11,75],[2,3,12,106],[2,3,13,42],[2,3,14,13],[2,3,15,63],[2,3,16,54],[2,3,17,37],[2,3,18,19],[2,3,19,4],[2,3,20,26],[2,3,21,21],[2,3,22,44],[3,5,2,10],[3,5,3,38],[3,5,4,20],[3,5,5,44],[3,5,6,40],[3,5,7,29],[3,5,8,60],[3,5,9,79],[3,5,10,71],[3,5,11,89],[3,5,12,129],[3,5,13,105],[3,5,14,87],[3,5,15,76],[3,5,16,85],[3,5,17,57],[3,5,18,42],[3,5,19,7],[3,5,20,52],[3,5,21,62],[3,5,22,58],[4,0,0,0],[4,0,2,7],[4,0,3,9],[4,0,4,8],[4,0,5,17],[4,0,6,21],[4,0,7,20],[4,0,8,20],[4,0,9,18],[4,0,10,15],[4,0,11,14],[4,0,12,23],[4,0,13,36],[4,0,14,10],[4,0,15,24],[4,0,16,30],[4,0,17,6],[4,0,18,8],[4,0,19,1],[4,0,20,17],[4,0,21,15],[4,0,22,12],[4,1,14,3],[4,1,15,12],[4,1,16,6],[4,1,17,1],[4,1,18,4],[4,1,19,6],[4,1,20,4],[4,1,21,3],[4,1,22,4],[5,9,14,0],[5,9,15,18],[5,9,16,34],[5,9,17,43],[5,9,18,23],[5,9,19,2],[5,9,20,51],[5,9,21,59],[5,9,22,64],[5,10,6,17],[5,10,7,5],[5,10,8,15],[5,10,9,20],[5,10,10,21],[5,10,13,29],[5,10,14,14],[5,10,16,0],[6,12,4,61],[6,12,5,128],[6,12,6,55],[6,12,7,14],[6,12,8,10],[6,12,9,20],[6,12,10,11],[6,12,11,10],[6,12,12,14],[6,12,13,22],[6,12,14,19],[6,12,15,15],[6,12,16,9],[6,12,17,2],[6,12,18,1],[6,12,19,0],[6,12,20,11],[6,12,21,26],[6,12,22,37],[7,0,0,0],[7,0,1,0],[7,0,2,7],[7,0,3,9],[7,0,4,5],[7,0,5,7],[7,0,6,7],[7,0,7,9],[7,0,8,11],[7,0,9,6],[7,0,10,10],[7,0,11,7],[7,0,12,24],[7,0,13,14],[7,0,14,9],[7,0,15,12],[7,0,16,6],[7,0,17,8],[7,0,18,9],[7,0,19,5],[7,0,20,10],[7,0,21,9],[7,0,22,13],[7,1,14,5],[7,1,15,4],[7,1,16,3],[7,1,17,7],[7,1,18,4],[7,1,19,1],[7,1,20,3],[7,1,21,7],[7,1,22,5],[8,11,0,5],[8,11,4,28],[8,11,5,29],[8,11,6,29],[8,11,7,22],[8,11,8,36],[8,11,9,19],[8,11,10,34],[8,11,11,29],[8,11,12,48],[8,11,13,29],[8,11,14,19],[8,11,15,14],[8,11,16,104],[8,11,17,53],[8,11,18,25],[8,11,19,18],[8,11,20,25],[8,11,21,18],[8,11,22,18],[9,11,0,5],[9,11,4,9],[9,11,5,38],[9,11,6,34],[9,11,7,108],[9,11,8,129],[9,11,9,98],[9,11,10,136],[9,11,11,136],[9,11,12,198],[9,11,13,135],[9,11,14,94],[9,11,15,131],[9,11,16,192],[9,11,17,88],[9,11,18,35],[9,11,19,6],[9,11,20,82],[9,11,21,81],[9,11,22,80],[10,14,0,1],[10,14,4,8],[10,14,5,33],[10,14,6,36],[10,14,7,35],[10,14,8,51],[10,14,9,32],[10,14,10,41],[10,14,11,47],[10,14,12,66],[10,14,13,76],[10,14,14,42],[10,14,15,49],[10,14,16,44],[10,14,17,44],[10,14,18,31],[10,14,19,3],[10,14,20,48],[10,14,21,46],[10,14,22,38],[11,2,16,30],[11,2,17,16],[11,2,18,15],[11,2,19,7],[11,2,20,20],[11,2,21,18],[11,2,22,2],[12,3,2,12],[12,3,3,24],[12,3,4,32],[12,3,5,47],[12,3,6,30],[12,3,7,24],[12,3,8,14],[12,3,9,15],[12,3,10,27],[12,3,11,19],[12,3,12,34],[12,3,13,7],[12,3,14,11],[12,3,15,13],[12,3,16,9],[12,3,17,2],[12,3,18,3],[12,3,19,3],[12,3,20,1],[12,3,21,3],[12,3,22,3],[13,4,2,12],[13,4,3,25],[13,4,4,19],[13,4,5,21],[13,4,6,21],[13,4,7,11],[13,4,8,35],[13,4,9,71],[13,4,10,83],[13,4,11,85],[13,4,12,130],[13,4,13,126],[13,4,14,66],[13,4,15,59],[13,4,16,47],[13,4,17,22],[13,4,18,26],[13,4,19,8],[13,4,20,52],[13,4,21,44],[13,4,22,82],[14,6,2,8],[14,6,3,20],[14,6,4,22],[14,6,5,47],[14,6,6,44],[14,6,7,42],[14,6,8,43],[14,6,9,44],[14,6,10,98],[14,6,11,85],[14,6,12,153],[14,6,13,68],[14,6,14,44],[14,6,15,33],[14,6,16,37],[14,6,17,8],[14,6,18,14],[14,6,19,1],[14,6,20,37],[14,6,21,35],[14,6,22,80],[15,7,6,4],[15,7,7,110],[15,7,8,143],[15,7,9,100],[15,7,10,115],[15,7,11,131],[15,7,12,161],[15,7,13,135],[15,7,14,112],[15,7,15,94],[15,7,16,78],[15,7,17,64],[15,7,18,33],[15,7,19,7],[15,7,20,76],[15,7,21,70],[15,7,22,85],[16,9,20,3],[16,9,21,38],[16,9,22,40],[17,3,2,11],[17,3,3,6],[17,3,4,13],[17,3,5,16],[17,3,6,19],[17,3,7,11],[17,3,8,12],[17,3,9,12],[17,3,10,12],[17,3,11,13],[17,3,12,9],[17,3,13,6],[17,3,14,4],[17,3,15,0],[17,3,16,8],[17,3,17,4],[17,3,18,3],[17,3,19,3],[17,3,20,5],[17,3,21,3],[17,3,22,3],[18,4,2,6],[18,4,3,5],[18,4,4,4],[18,4,5,9],[18,4,6,6],[18,4,7,11],[18,4,8,19],[18,4,9,20],[18,4,10,13],[18,4,11,16],[18,4,12,21],[18,4,13,21],[18,4,14,7],[18,4,15,5],[18,4,16,3],[18,4,17,1],[19,0,2,4],[19,0,3,5],[19,0,4,8],[19,0,5,8],[19,0,6,3],[19,0,7,5],[19,0,8,8],[19,0,9,12],[19,0,10,6],[19,0,11,3],[19,0,12,14],[19,0,13,13],[19,0,14,8],[19,0,15,7],[19,0,16,5],[19,0,17,6],[19,0,18,5],[19,0,19,2],[19,0,20,13],[19,0,21,7],[19,0,22,6],[19,1,14,1],[19,1,15,3],[19,1,16,4],[19,1,17,0],[19,1,18,2],[19,1,19,1],[19,1,20,7],[19,1,21,3],[19,1,22,2],[20,8,17,12],[20,8,18,3],[21,2,16,28],[21,2,17,47],[21,2,18,29],[21,2,19,9],[21,2,20,32],[21,2,21,28],[21,2,22,11],[22,4,2,4],[22,4,3,5],[22,4,4,7],[22,4,5,5],[22,4,6,10],[22,4,7,12],[22,4,8,18],[22,4,9,6],[22,4,10,14],[22,4,11,13],[22,4,12,15],[22,4,13,16],[22,4,14,9],[22,4,15,1],[22,4,16,2],[22,4,17,1],[23,13,7,37],[23,13,8,25],[23,13,9,18],[23,13,10,21],[23,13,11,18],[23,13,12,25],[23,13,13,4],[23,13,14,3],[23,13,15,4],[23,13,16,2],[23,13,17,4],[23,13,18,4],[23,13,19,6],[23,13,20,6],[23,13,21,8],[23,13,22,3],[24,11,0,2],[24,11,4,19],[24,11,5,32],[24,11,6,34],[24,11,7,30],[24,11,8,44],[24,11,9,34],[24,11,10,38],[24,11,11,33],[24,11,12,60],[24,11,13,14],[24,11,14,14],[24,11,15,9],[24,11,16,90],[24,11,17,43],[24,11,18,23],[24,11,19,14],[24,11,20,28],[24,11,21,10],[24,11,22,23],[25,3,0,0],[25,3,2,8],[25,3,3,13],[25,3,4,16],[25,3,5,19],[25,3,6,8],[25,3,7,7],[25,3,8,9],[25,3,9,14],[25,3,10,10],[25,3,11,4],[25,3,12,18],[25,3,13,12],[25,3,14,6],[25,3,15,19],[25,3,16,7],[25,3,17,6],[25,3,18,3],[25,3,19,4],[25,3,20,13],[25,3,21,6],[25,3,22,11],[26,14,0,1],[26,14,4,34],[26,14,5,47],[26,14,6,10],[26,14,7,4],[26,14,8,6],[26,14,9,4],[26,14,10,13],[26,14,11,7],[26,14,12,8],[26,14,13,13],[26,14,14,13],[26,14,15,6],[26,14,16,8],[26,14,17,4],[26,14,18,4],[26,14,19,1],[26,14,20,8],[26,14,21,5],[26,14,22,3],[27,3,2,33],[27,3,3,38],[27,3,4,47],[27,3,5,39],[27,3,6,25],[27,3,7,8],[27,3,8,6],[27,3,9,6],[27,3,10,4],[27,3,11,4],[27,3,12,17],[27,3,13,5],[27,3,14,16],[27,3,15,5],[27,3,16,9],[27,3,17,9],[27,3,18,5],[27,3,19,8],[27,3,20,5],[27,3,21,4],[27,3,22,8],[28,14,4,5],[28,14,5,8],[28,14,6,6],[28,14,7,7],[28,14,8,5],[28,14,9,13],[28,14,10,17],[28,14,11,6],[28,14,12,13],[28,14,13,11],[28,14,14,13],[28,14,15,5],[28,14,16,10],[28,14,17,9],[28,14,18,4],[28,14,19,3],[28,14,20,10],[28,14,21,5],[28,14,22,2],[29,8,17,6],[29,8,18,13],[30,2,16,19],[30,2,17,22],[30,2,18,20],[30,2,19,6],[30,2,20,25],[30,2,21,19],[30,2,22,8],[31,3,0,0],[31,3,2,17],[31,3,3,27],[31,3,4,29],[31,3,5,32],[31,3,6,21],[31,3,7,13],[31,3,8,28],[31,3,9,19],[31,3,10,15],[31,3,11,13],[31,3,12,17],[31,3,13,12],[31,3,14,7],[31,3,15,13],[31,3,16,19],[31,3,17,27],[31,3,18,20],[31,3,19,11],[31,3,20,25],[31,3,21,14],[31,3,22,12],[32,4,1,0],[32,4,2,16],[32,4,3,26],[32,4,4,28],[32,4,5,20],[32,4,6,15],[32,4,7,35],[32,4,8,30],[32,4,9,37],[32,4,10,38],[32,4,11,21],[32,4,12,36],[32,4,13,41],[32,4,14,7],[32,4,15,6],[32,4,16,5],[32,4,17,0],[33,11,0,10],[33,11,4,8],[33,11,5,21],[33,11,6,58],[33,11,7,50],[33,11,8,66],[33,11,9,33],[33,11,10,62],[33,11,11,57],[33,11,12,66],[33,11,13,24],[33,11,14,18],[33,11,15,22],[33,11,16,17],[33,11,17,21],[33,11,18,14],[33,11,19,12],[33,11,20,24],[33,11,21,12],[33,11,22,17],[34,14,4,8],[34,14,5,5],[34,14,6,44],[34,14,7,31],[34,14,8,35],[34,14,9,29],[34,14,10,30],[34,14,11,27],[34,14,12,38],[34,14,13,46],[34,14,14,26],[34,14,15,37],[34,14,16,36],[34,14,17,39],[34,14,18,16],[34,14,19,6],[34,14,20,43],[34,14,21,34],[34,14,22,42],[35,7,9,30],[35,7,10,41],[35,7,11,41],[35,7,12,67],[35,7,13,6],[36,11,0,9],[36,11,4,11],[36,11,5,28],[36,11,6,31],[36,11,7,26],[36,11,8,29],[36,11,9,23],[36,11,10,29],[36,11,11,14],[36,11,12,30],[36,11,13,9],[36,11,14,12],[36,11,15,15],[36,11,16,16],[36,11,17,4],[36,11,18,1],[36,11,19,4],[36,11,20,3],[36,11,21,3],[36,11,22,4],[37,3,2,16],[37,3,3,15],[37,3,4,15],[37,3,5,14],[37,3,6,15],[37,3,7,8],[37,3,8,9],[37,3,9,10],[37,3,10,13],[37,3,11,12],[37,3,12,13],[37,3,13,4],[37,3,14,3],[37,3,15,4],[37,3,16,4],[37,3,17,4],[37,3,18,1],[37,3,19,3],[37,3,20,5],[37,3,21,1],[37,3,22,2],[38,6,2,2],[38,6,3,6],[38,6,4,9],[38,6,5,14],[38,6,6,6],[38,6,7,9],[38,6,8,6],[38,6,9,7],[38,6,10,37],[38,6,11,16],[38,6,12,20],[38,6,13,11],[38,6,14,16],[38,6,15,11],[38,6,16,9],[38,6,17,10],[38,6,18,3],[38,6,19,6],[38,6,20,9],[38,6,21,6],[38,6,22,11],[39,4,2,2],[39,4,3,8],[39,4,4,13],[39,4,5,17],[39,4,6,12],[39,4,7,0],[40,6,2,7],[40,6,3,15],[40,6,4,20],[40,6,5,25],[40,6,6,34],[40,6,7,37],[40,6,8,31],[40,6,9,21],[40,6,10,135],[40,6,11,76],[40,6,12,143],[40,6,13,66],[40,6,14,24],[40,6,15,50],[40,6,16,47],[40,6,17,37],[40,6,18,19],[40,6,19,33],[40,6,20,58],[40,6,21,44],[40,6,22,37],[41,4,2,5],[41,4,3,13],[41,4,4,10],[41,4,5,31],[41,4,6,24],[41,4,7,8],[41,4,8,4],[41,4,9,9],[41,4,10,8],[41,4,11,1],[41,4,12,15],[41,4,13,5],[41,4,14,5],[41,4,15,9],[41,4,16,7],[41,4,17,1],[42,13,7,33],[42,13,8,21],[42,13,9,20],[42,13,10,18],[42,13,11,14],[42,13,12,24],[42,13,13,3],[42,13,14,4],[42,13,15,2],[42,13,16,3],[42,13,17,5],[42,13,18,6],[42,13,19,3],[42,13,20,6],[42,13,21,5],[42,13,22,5],[43,3,2,10],[43,3,3,13],[43,3,4,18],[43,3,5,36],[43,3,6,50],[43,3,7,37],[43,3,8,34],[43,3,9,38],[43,3,10,39],[43,3,11,34],[43,3,12,50],[43,3,13,11],[43,3,14,7],[43,3,15,7],[43,3,16,10],[43,3,17,4],[43,3,18,8],[43,3,19,9],[43,3,20,9],[43,3,21,18],[43,3,22,14],[44,5,2,10],[44,5,3,14],[44,5,4,15],[44,5,5,20],[44,5,6,14],[44,5,7,22],[44,5,8,30],[44,5,9,18],[44,5,10,34],[44,5,11,26],[44,5,12,29],[44,5,13,24],[44,5,14,24],[44,5,15,27],[44,5,16,31],[44,5,17,19],[44,5,18,12],[44,5,19,5],[44,5,20,29],[44,5,21,14],[44,5,22,21],[45,3,0,0],[45,3,2,13],[45,3,3,31],[45,3,4,30],[45,3,5,21],[45,3,6,18],[45,3,7,27],[45,3,8,32],[45,3,9,25],[45,3,10,29],[45,3,11,19],[45,3,12,27],[45,3,13,16],[45,3,14,5],[45,3,15,2],[45,3,16,6],[45,3,17,6],[45,3,18,7],[45,3,19,3],[45,3,20,3],[45,3,21,15],[45,3,22,28],[46,7,7,23],[46,7,8,40],[46,7,9,38],[46,7,10,28],[46,7,11,29],[46,7,12,48],[46,7,13,50],[46,7,14,36],[46,7,15,29],[46,7,16,17],[46,7,17,19],[46,7,18,11],[46,7,19,6],[46,7,20,27],[46,7,21,13],[46,7,22,26],[46,8,17,16],[46,8,18,20],[47,6,2,3],[47,6,3,10],[47,6,4,9],[47,6,5,14],[47,6,6,3],[47,6,7,0]]};
+const API = "https://script.google.com/macros/s/AKfycbxuQ-HloVGwDoYLN8sEeY2S-R8Makdu2rSvZE0L4riebuLXSfwWo_iNoQ34SeLK7fgiEQ/exec";
+const PERFILES = ["Financieras - No reportado","Financieras - Reportado","Contado","Pensionados","Independientes","Vanti"];
+const MES = ["","Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+const MES3 = ["","ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+const nf = new Intl.NumberFormat("es-CO");
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const $ = s => document.querySelector(s);
+
+// ---------- fechas ----------
+const aD = s => new Date(s+"T00:00:00Z");
+const mas = (s,n) => { const d=aD(s); d.setUTCDate(d.getUTCDate()+n); return d.toISOString().slice(0,10); };
+const iniMes = s => s.slice(0,8)+"01";
+const finMes = s => { const d=aD(iniMes(s)); d.setUTCMonth(d.getUTCMonth()+1); d.setUTCDate(0); return d.toISOString().slice(0,10); };
+const corta = s => `${+s.slice(8,10)} ${MES3[+s.slice(5,7)]}`;
+function cuando(iso){
+  if(!iso) return "";
+  const [f,h] = iso.split("T"); const [hh,mm] = (h||"00:00").split(":").map(Number);
+  const ap = hh>=12 ? "p. m." : "a. m."; const h12 = hh%12 || 12;
+  return `${corta(f)} · ${h12}:${String(mm).padStart(2,"0")} ${ap}`;
+}
+
+// ---------- Meta ----------
+const ADS = new Map(D.adsets.map(([n,soc,z],i)=>[n,{i,soc,zona:z}]));
+const ES_MED = D.camps.map(c=>/_med\s*$/i.test(c.trim()));
+const porAdset = new Map();              // indice adset -> [[camp, fecha, leads]]
+for(const [a,c,f,n] of D.d){ if(!porAdset.has(a)) porAdset.set(a,[]); porAdset.get(a).push([c,D.fechas[f],n]); }
+const canon = s => String(s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/\s+/g," ").trim().toLowerCase();
+const ADS_CANON = new Map(D.adsets.map(([n])=>[canon(n), n]));
+const enMeta = nombre => ADS.get(nombre) || ADS.get(ADS_CANON.get(canon(nombre)));
+
+// Que campañas cuentan para cada grupo: el call Medellin cuenta la campaña _Med si el
+// conjunto la tiene; Bogota y Centro nunca cuentan la _Med.
+function filasGrupo(nombre, grupo){
+  const a = enMeta(nombre); if(!a) return null;
+  const fs = porAdset.get(a.i) || [];
+  if(grupo === "Call Medellín"){
+    const conMed = fs.some(([c])=>ES_MED[c]);
+    return conMed ? fs.filter(([c])=>ES_MED[c]) : fs;
+  }
+  return fs.filter(([c])=>!ES_MED[c]);
+}
+function llevamos(nombre, grupo, d0, d1){
+  const fs = filasGrupo(nombre, grupo); if(!fs) return null;
+  let n=0; for(const [,f,l] of fs) if(f>=d0 && f<=d1) n+=l; return n;
+}
+
+// ---------- estado ----------
+let TOKEN = new URLSearchParams(location.search).get("u");
+try { if(TOKEN) localStorage.setItem("pedidos_u", TOKEN); else TOKEN = localStorage.getItem("pedidos_u"); } catch(e){}
+let S = null;              // respuesta del backend
+let grupoSel = null, mesSel = iniMes(D.hasta), hisTodos = false;
+const abiertos = new Set();
+let pend = 0;
+
+function puedeEditar(g){ return !!S && (S.yo.admin || S.yo.grupo === g); }
+
+// Linea de tiempo de un pedido desde el historial: devuelve el estado vigente
+// al cierre de cada dia, para que el esperado respete cada cambio.
+function linea(p){
+  const ev = S.historial.filter(h=>h.pedido_id===p.id && ["alta","estado","diarios"].includes(h.campo))
+                        .sort((a,b)=>a.fecha<b.fecha?-1:1);
+  if(!ev.length) return () => ({estado:p.estado, diarios:+p.diarios||0});
+  return dia => {
+    const tope = dia+"T23:59:59";
+    let st = null;
+    for(const h of ev){
+      if(h.fecha > tope) break;
+      if(!st) st = {estado:"Apagada", diarios:0};
+      if(h.campo==="estado") st.estado = h.despues;
+      if(h.campo==="diarios") st.diarios = +h.despues||0;
+    }
+    return st || {estado:"Apagada", diarios:0};
+  };
+}
+function esperado(p, d0, d1){
+  const at = linea(p); let n = 0;
+  for(let d=d0; d<=d1; d=mas(d,1)){ const s=at(d); if(s.estado==="Prendida") n+=s.diarios; }
+  return n;
+}
+function rango(){
+  const d0 = mesSel < D.desde ? D.desde : mesSel;
+  const f = finMes(mesSel); const d1 = f > D.hasta ? D.hasta : f;
+  return {d0, d1, dias: d1>=d0 ? Math.round((aD(d1)-aD(d0))/864e5)+1 : 0};
+}
+function semaforo(esp, lle){
+  if(lle==null) return {cls:"na", txt:"Sin datos", r:null};
+  if(!esp) return {cls:"na", txt: lle? "Sin pedido" : "—", r:null};
+  const r = lle/esp;
+  if(r < 0.9) return {cls:"bad", txt:"Faltan", r};
+  if(r > 1.1) return {cls:"warn", txt:"Por encima", r};
+  return {cls:"good", txt:"En meta", r};
+}
+function cumHtml(esp, lle){
+  const s = semaforo(esp, lle);
+  if(s.r==null) return `<div class="cum"><span class="sem ${s.cls}">${s.txt}</span></div>`;
+  const w = Math.min(100, s.r/1.3*100);
+  const col = s.cls==="bad" ? "var(--bad)" : s.cls==="warn" ? "var(--warn)" : "var(--good)";
+  return `<div class="cum"><span class="num" style="font-size:12.5px">${Math.round(s.r*100)}%</span>
+    <span class="b" aria-hidden="true"><i style="width:${w}%;background:${col}"></i><u></u></span>
+    <span class="sem ${s.cls}">${s.txt}</span></div>`;
+}
+const difHtml = (esp, lle) => lle==null || !esp ? "—" :
+  `<span class="dif ${lle-esp<0?"neg":"pos"}">${lle-esp>0?"+":""}${nf.format(lle-esp)}</span>`;
+
+// ---------- backend ----------
+function aviso(txt, err=false, ms=2200){
+  const el=$("#save"); el.textContent=txt; el.classList.toggle("err",err); el.classList.add("on");
+  clearTimeout(aviso.t); if(ms) aviso.t=setTimeout(()=>el.classList.remove("on"), ms);
+}
+async function cargar(){
+  const r = await fetch(API+"?u="+encodeURIComponent(TOKEN)); return r.json();
+}
+async function enviar(cuerpo){
+  pend++; aviso("Guardando…", false, 0);
+  try{
+    const r = await fetch(API, {method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"},
+      body: JSON.stringify({...cuerpo, u:TOKEN})});
+    const j = await r.json();
+    if(!j.ok) throw new Error(j.error||"error");
+    S = j; pend--;
+    aviso("Guardado ✓");
+    pintar();
+    return true;
+  }catch(e){
+    pend--;
+    const m = {link_invalido:"Tu link ya no es válido", ocupado:"Otra persona está guardando, intenta de nuevo"}[e.message] || e.message;
+    aviso("No se guardó: "+m, true, 6000);
+    pintar();
+    return false;
+  }
+}
+const guardar = (p, cambios) => enviar({accion:"guardar", id:p.id, cambios});
+
+// ---------- pintar ----------
+function pintarTabs(){
+  const n = g => S.pedidos.filter(p=>p.grupo===g && p.estado==="Prendida").length;
+  $("#gtabs").innerHTML = S.grupos.map(g=>`<button type="button" class="gtab" data-g="${esc(g)}" aria-pressed="${g===grupoSel}">
+    ${esc(g)}<span class="tabn">${n(g)}</span>${S.yo.grupo===g?'<span class="mio">el tuyo</span>':""}</button>`).join("");
+  $("#gtabs").querySelectorAll(".gtab").forEach(b=>b.onclick=()=>{ grupoSel=b.dataset.g; abiertos.clear(); pintar(); });
+}
+function pintarMeses(){
+  const ms=[]; for(let m=iniMes(D.desde); m<=iniMes(D.hasta); m=mas(finMes(m),1)) ms.push(m);
+  $("#meses").innerHTML = ms.map(m=>`<button type="button" class="fbtn" data-m="${m}" aria-pressed="${m===mesSel}">${MES[+m.slice(5,7)]} ${m.slice(0,4)}</button>`).join("");
+  $("#meses").querySelectorAll(".fbtn").forEach(b=>b.onclick=()=>{ mesSel=b.dataset.m; pintar(); });
+}
+function filasDelGrupo(){
+  const {d0,d1} = rango();
+  return S.pedidos.filter(p=>p.grupo===grupoSel).map(p=>{
+    const a = enMeta(p.adset);
+    return {p, a, soc: p.sociedad || a?.soc || "Sin sociedad", zona: a?.zona || p.adset,
+            esp: esperado(p,d0,d1), lle: llevamos(p.adset, grupoSel, d0, d1)};
+  });
+}
+function pintarKpis(fs){
+  const {d0,d1,dias} = rango();
+  const esp = fs.reduce((s,f)=>s+f.esp,0), lle = fs.reduce((s,f)=>s+(f.lle||0),0);
+  const on = fs.filter(f=>f.p.estado==="Prendida");
+  const hoy = on.reduce((s,f)=>s+(+f.p.diarios||0),0);
+  const s = semaforo(esp, lle);
+  $("#tResumen").textContent = `${grupoSel} · ${MES[+mesSel.slice(5,7)]}`;
+  $("#pResumen").textContent = dias ? `Del ${corta(d0)} al ${corta(d1)} (${dias} día${dias>1?"s":""}).` : "Todavía no hay datos de este mes.";
+  $("#kpis").innerHTML = `
+    <div class="kpi"><div class="k">Esperado</div><div class="v">${nf.format(esp)}</div><div class="s">lo pedido a la fecha</div></div>
+    <div class="kpi"><div class="k">Llevamos</div><div class="v">${nf.format(lle)}</div><div class="s">leads de Meta</div></div>
+    <div class="kpi"><div class="k">Diferencia</div><div class="v">${esp? difHtml(esp,lle) : "—"}</div><div class="s">llevamos − esperado</div></div>
+    <div class="kpi"><div class="k">Cumplimiento</div><div class="v">${s.r==null?"—":Math.round(s.r*100)+"%"}</div><div class="s"><span class="sem ${s.cls}">${s.txt}</span></div></div>
+    <div class="kpi"><div class="k">Pedido hoy</div><div class="v">${nf.format(hoy)}<span style="font-size:13px;color:var(--ink-3)"> /día</span></div><div class="s">${on.length} conjunto${on.length===1?"":"s"} prendido${on.length===1?"":"s"}</div></div>`;
+}
+function otrosGrupos(p){
+  return S.pedidos.filter(q=>q.grupo!==p.grupo && q.estado==="Prendida" && canon(q.adset)===canon(p.adset))
+    .map(q=>`${q.grupo}: ${q.diarios}/día`);
+}
+function sinEntregar(p){
+  if(p.estado!=="Prendida") return false;
+  const fs = filasGrupo(p.adset, p.grupo); if(!fs) return false;
+  const d0 = mas(D.hasta,-1);
+  return fs.filter(([,f])=>f>=d0).reduce((s,[, ,l])=>s+l,0) === 0;
+}
+// Apagado en el pedido pero Meta sigue entregando, y ningun otro grupo lo tiene prendido:
+// es plata que se esta gastando en leads que nadie pidio.
+function apagadaEntregando(p){
+  if(p.estado==="Prendida") return false;
+  if(S.pedidos.some(q=>q.estado==="Prendida" && canon(q.adset)===canon(p.adset))) return false;
+  const fs = filasGrupo(p.adset, p.grupo); if(!fs) return false;
+  const d0 = mas(D.hasta,-1);
+  return fs.filter(([,f])=>f>=d0).reduce((s,[, ,l])=>s+l,0) > 0;
+}
+// dia desde el que el pedido cuenta (su alta, o el inicio del modelo si vino del Excel)
+function alta(p){
+  const h = S.historial.find(x=>x.pedido_id===p.id && x.campo==="alta");
+  return h ? h.fecha.slice(0,10) : D.desde;
+}
+function textoCambio(h){
+  const g = x => h.campo==="perfiles" ? (String(x||"").split("|").filter(Boolean).join(", ") || "ninguno") : x;
+  if(h.campo==="alta") return "agregó el conjunto a la lista";
+  if(h.campo==="baja") return `quitó el conjunto (estaba ${esc(h.antes)})`;
+  if(h.campo==="estado") return `lo pasó a <b>${esc(h.despues)}</b>`;
+  if(h.campo==="diarios") return `diarios <b>${esc(h.antes===""?"—":h.antes)} → ${esc(h.despues)}</b>`;
+  if(h.campo==="perfiles") return `perfiles: ${esc(g(h.despues))}`;
+  if(h.campo==="cobertura") return `cobertura: “${esc(h.despues||"(vacía)")}”`;
+  return esc(h.campo);
+}
+function pintarTabla(fs){
+  const ed = puedeEditar(grupoSel);
+  const {d0,d1} = rango();
+  $("#pTabla").textContent = ed
+    ? "Prende o apaga, cambia los diarios o abre el detalle para los perfiles y la cobertura. Todo se guarda solo."
+    : `Solo lectura: tu link edita ${S.yo.grupo}.`;
+  const socs = new Map();
+  for(const f of fs){ if(!socs.has(f.soc)) socs.set(f.soc,[]); socs.get(f.soc).push(f); }
+  const orden = [...socs.keys()].sort((a,b)=>a.localeCompare(b,"es"));
+  let h = "";
+  for(const soc of orden){
+    const g = socs.get(soc).sort((a,b)=> (b.p.estado==="Prendida")-(a.p.estado==="Prendida") || a.zona.localeCompare(b.zona,"es"));
+    const esp=g.reduce((s,f)=>s+f.esp,0), lle=g.reduce((s,f)=>s+(f.lle||0),0);
+    const on=g.filter(f=>f.p.estado==="Prendida"), hoy=on.reduce((s,f)=>s+(+f.p.diarios||0),0);
+    h += `<tr class="soc"><td class="l">${esc(soc)} <span class="an" style="display:inline;margin-left:6px">${on.length} de ${g.length} prendidos</span></td>
+      <td></td><td class="num">${nf.format(hoy)}</td><td class="num">${nf.format(esp)}</td><td class="num">${nf.format(lle)}</td>
+      <td class="num">${difHtml(esp,lle)}</td><td class="num">${cumHtml(esp,lle)}</td><td></td></tr>`;
+    for(const f of g){
+      const p=f.p, on=p.estado==="Prendida", ab=abiertos.has(p.id);
+      const fl=[];
+      if(!f.a && on) fl.push(`<span class="flag bad" title="Ese nombre no aparece en ninguna campaña de Call en Meta desde el ${corta(D.desde)}">No aparece en Meta</span>`);
+      if(sinEntregar(p)) fl.push(`<span class="flag warn">Sin leads los últimos 2 días</span>`);
+      if(apagadaEntregando(p)) fl.push(`<span class="flag bad" title="Nadie lo tiene prendido, pero Meta le entregó leads ayer o antier">Apagada, pero Meta sigue entregando</span>`);
+      for(const o of otrosGrupos(p)) fl.push(`<span class="flag info" title="Otro grupo pide leads del mismo conjunto">También lo pide ${esc(o)}</span>`);
+      h += `<tr class="ped ${on?"":"off"}" data-id="${esc(p.id)}">
+        <td class="l"><span class="zn">${esc(f.zona)}</span><span class="an">${esc(p.adset)}</span>${fl.length?`<div class="flags">${fl.join("")}</div>`:""}</td>
+        <td class="l keep"><button type="button" class="sw" role="switch" aria-checked="${on}" ${ed?"":"disabled"} aria-label="Prendida"><i></i>${on?"Prendida":"Apagada"}</button></td>
+        <td class="num keep"><input class="nd" type="number" inputmode="numeric" min="0" max="5000" step="1" value="${+p.diarios||0}" ${ed?"":"disabled"} aria-label="Leads diarios que pide"></td>
+        <td class="num">${nf.format(f.esp)}</td>
+        <td class="num">${f.lle==null?"—":nf.format(f.lle)}</td>
+        <td class="num">${difHtml(f.esp,f.lle)}</td>
+        <td class="num">${on && !f.esp && alta(p) > D.hasta ? `<div class="cum"><span class="sem na">Cuenta desde el ${corta(alta(p))}</span></div>` : cumHtml(f.esp,f.lle)}</td>
+        <td class="keep"><button type="button" class="det" aria-expanded="${ab}" aria-controls="d-${esc(p.id)}">Detalle <svg viewBox="0 0 10 10" aria-hidden="true"><path d="M3 1.5 7 5 3 8.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button></td></tr>`;
+      if(ab){
+        const per = String(p.perfiles||"").split("|").filter(Boolean);
+        const mh = S.historial.filter(x=>x.pedido_id===p.id).sort((a,b)=>a.fecha<b.fecha?1:-1).slice(0,12);
+        h += `<tr class="detrow" id="d-${esc(p.id)}" data-id="${esc(p.id)}"><td colspan="8"><div class="dgrid">
+          <div><div class="dlbl">Perfiles que quiere</div><div class="perfs">${PERFILES.map(x=>
+            `<button type="button" class="pchk" data-v="${esc(x)}" aria-pressed="${per.includes(x)}" ${ed?"":"disabled"}>${esc(x)}</button>`).join("")}</div></div>
+          <div><div class="dlbl">Cobertura / instrucciones</div><textarea class="cob" maxlength="500" placeholder="Ej: concentrar en Villavicencio" ${ed?"":"disabled"}>${esc(p.cobertura)}</textarea></div>
+          <div><div class="dlbl">Últimos cambios</div><ul class="mhis">${mh.map(x=>`<li><b>${esc(x.nombre)}</b> · ${cuando(x.fecha)}<br>${textoCambio(x)}</li>`).join("") || "<li>Sin cambios</li>"}</ul></div>
+          </div>${ed?`<div class="dacts"><button type="button" class="fbtn mal quitar">Quitar de la lista</button></div>`:""}</td></tr>`;
+      }
+    }
+  }
+  $("#tbl tbody").innerHTML = h || `<tr><td colspan="8" class="vac">${esc(grupoSel)} todavía no tiene conjuntos en su lista.</td></tr>`;
+  $("#bAbrir").textContent = abiertos.size ? "Cerrar los detalles" : "Abrir todos los detalles";
+
+  const pid = el => el.closest("[data-id]").dataset.id;
+  const ped = id => S.pedidos.find(p=>p.id===id);
+  $("#tbl").querySelectorAll(".det").forEach(b=>b.onclick=()=>{ const id=pid(b); abiertos.has(id)?abiertos.delete(id):abiertos.add(id); pintar(); });
+  if(!ed) return;
+  $("#tbl").querySelectorAll(".sw").forEach(b=>b.onclick=()=>{
+    const p=ped(pid(b)); const nuevo = p.estado==="Prendida" ? "Apagada" : "Prendida";
+    p.estado = nuevo; pintar(); guardar(p,{estado:nuevo});
+  });
+  $("#tbl").querySelectorAll("input.nd").forEach(i=>i.onchange=()=>{
+    const p=ped(pid(i)); const v=Math.max(0, Math.round(+i.value||0));
+    if(v===+p.diarios) return; p.diarios=v; guardar(p,{diarios:v});
+  });
+  $("#tbl").querySelectorAll(".pchk").forEach(b=>b.onclick=()=>{
+    const p=ped(pid(b)); const set=new Set(String(p.perfiles||"").split("|").filter(Boolean));
+    set.has(b.dataset.v)?set.delete(b.dataset.v):set.add(b.dataset.v);
+    p.perfiles = PERFILES.filter(x=>set.has(x)).join("|");
+    b.setAttribute("aria-pressed", set.has(b.dataset.v));
+    clearTimeout(p._t); p._t=setTimeout(()=>guardar(p,{perfiles:p.perfiles}), 900);
+  });
+  $("#tbl").querySelectorAll("textarea.cob").forEach(t=>t.onchange=()=>{ const p=ped(pid(t)); p.cobertura=t.value; guardar(p,{cobertura:t.value}); });
+  $("#tbl").querySelectorAll(".quitar").forEach(b=>b.onclick=()=>{
+    const p=ped(pid(b));
+    if(b.dataset.ok!=="1"){ b.dataset.ok="1"; b.textContent="¿Seguro? Toca otra vez para quitar"; return; }
+    abiertos.delete(p.id); enviar({accion:"quitar", id:p.id});
+  });
+}
+function pintarAgregar(){
+  const el=$("#add");
+  if(!puedeEditar(grupoSel)){ el.hidden=true; return; }
+  el.hidden=false;
+  const ya = new Set(S.pedidos.filter(p=>p.grupo===grupoSel).map(p=>canon(p.adset)));
+  const socs = [...new Set(D.adsets.map(a=>a[1]))].sort((a,b)=>a.localeCompare(b,"es"));
+  const socSel = el.dataset.soc || "";
+  const d7 = mas(D.hasta,-6);
+  const ops = D.adsets.filter(([n,s])=>s===socSel && !ya.has(canon(n)))
+    .map(([n,,z])=>({n,z,l:llevamos(n,grupoSel,d7,D.hasta)||0}))
+    .sort((a,b)=>b.l-a.l || a.z.localeCompare(b.z,"es"));
+  el.innerHTML = `
+    <label>Sociedad<select id="aSoc"><option value="">Elige…</option>${socs.map(s=>`<option ${s===socSel?"selected":""}>${esc(s)}</option>`).join("")}</select></label>
+    <label class="grow">Conjunto de Meta<select id="aAds" ${socSel?"":"disabled"}>${socSel? (ops.length? ops.map(o=>`<option value="${esc(o.n)}">${esc(o.z)} — ${esc(o.n)} · ${nf.format(o.l)} leads en 7 días</option>`).join("") : `<option value="">Ya están todos en la lista</option>`) : `<option>Primero elige la sociedad</option>`}</select></label>
+    <label>Pide / día<input class="nd" id="aDia" type="number" min="0" max="5000" value="10"></label>
+    <button type="button" class="fbtn pri" id="aBtn" ${socSel && ops.length?"":"disabled"}>Agregar prendido</button>`;
+  $("#aSoc").onchange=e=>{ el.dataset.soc=e.target.value; pintarAgregar(); };
+  const b=$("#aBtn");
+  b.onclick=async()=>{
+    const n=$("#aAds").value; if(!n) return;
+    b.disabled=true;
+    const ok = await enviar({accion:"guardar", grupo:grupoSel, sociedad:socSel, adset:n,
+      cambios:{estado:"Prendida", diarios:Math.max(0,Math.round(+$("#aDia").value||0))}});
+    if(ok) el.dataset.soc="";
+    pintarAgregar();
+  };
+}
+function pintarHistorial(){
+  $("#bHisTodos").setAttribute("aria-pressed", hisTodos);
+  const zona = h => enMeta(h.adset)?.zona;
+  const CARGA = "Carga inicial (Excel)";
+  const todos = S.historial.filter(h=>hisTodos || h.grupo===grupoSel);
+  const hs = todos.filter(h=>h.nombre!==CARGA).sort((a,b)=>a.fecha<b.fecha?1:-1).slice(0,150);
+  const nCarga = new Set(todos.filter(h=>h.nombre===CARGA).map(h=>h.pedido_id)).size;
+  $("#his").innerHTML = hs.map(h=>{
+    const soc = S.pedidos.find(p=>p.id===h.pedido_id)?.sociedad || enMeta(h.adset)?.soc || "";
+    return `<li><span class="cu">${cuando(h.fecha)}</span><span class="qu"><b>${esc(h.nombre)}</b>${hisTodos?`<span class="gr">${esc(h.grupo)}</span>`:""}
+      — ${esc(soc)} ${esc(zona(h)||h.adset)}: ${textoCambio(h)}</span></li>`;
+  }).join("") + (nCarga ? `<li><span class="cu">${cuando(D.desde+"T00:00:00")}</span><span class="qu"><b>Carga inicial</b> — ${nCarga} conjuntos pasados del Excel del call, con lo que tenía anotado.</span></li>` : "")
+    || `<li class="vac" style="display:block">Todavía no hay cambios.</li>`;
+}
+function pintar(){
+  // no repintar mientras alguien escribe: perderia el foco y lo que lleva escrito
+  const act = document.activeElement;
+  if(act && act.matches("textarea.cob, input.nd") && act.closest("#tbl, #add")){ pintar.pend=true; return; }
+  pintar.pend=false;
+  pintarTabs(); pintarMeses();
+  const fs = filasDelGrupo();
+  pintarKpis(fs); pintarTabla(fs); pintarAgregar(); pintarHistorial();
+}
+document.addEventListener("focusout", ()=>setTimeout(()=>{ if(pintar.pend) pintar(); }, 50));
+
+$("#bAbrir").onclick=()=>{
+  if(abiertos.size) abiertos.clear(); else S.pedidos.filter(p=>p.grupo===grupoSel).forEach(p=>abiertos.add(p.id));
+  pintar();
+};
+$("#bHisTodos").onclick=()=>{ hisTodos=!hisTodos; pintarHistorial(); };
+$("#corteFecha").textContent = `${+D.hasta.slice(8)} de ${MES[+D.hasta.slice(5,7)].toLowerCase()}`;
+
+function portero(titulo, txt){
+  $("#gate").innerHTML = `<h2>${esc(titulo)}</h2><p>${esc(txt)}</p>`; $("#gate").hidden=false; $("#app").hidden=true;
+}
+(async()=>{
+  if(!TOKEN) return portero("Necesitas tu link personal", "Esta página se abre con el link que te envió Haku. Pídelo si no lo tienes.");
+  portero("Cargando pedidos…", "");
+  try{
+    const j = await cargar();
+    if(!j.ok) return portero("Este link no es válido", "Puede que haya cambiado. Pide tu link personal a Haku.");
+    S = j;
+    grupoSel = S.grupos.includes(S.yo.grupo) ? S.yo.grupo : S.grupos[0];
+    $("#yoTxt").textContent = `${S.yo.nombre} · ${S.yo.admin ? "Haku (edita todo)" : S.yo.grupo}`;
+    $("#yoBadge").hidden=false;
+    $("#gate").hidden=true; $("#app").hidden=false;
+    pintar();
+  }catch(e){
+    portero("No se pudo cargar", "Revisa tu conexión y recarga la página.");
+  }
+})();
+</script>
+</body>
+</html>
