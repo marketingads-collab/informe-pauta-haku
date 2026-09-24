@@ -123,7 +123,17 @@ th.c,td.c{text-align:center}
 thead th{font-family:var(--font-m); font-size:10.5px; font-weight:500; letter-spacing:.1em;
   text-transform:uppercase; color:var(--ink-3); border-bottom:1px solid var(--line); background:var(--surface)}
 tbody tr{border-bottom:1px solid var(--line-soft)}
-tr.soc{background:var(--surface-2); border-top:1px solid var(--line)}
+tr.soc{background:var(--surface-2); border-top:1px solid var(--line); cursor:pointer}
+tr.soc:hover{background:var(--line-soft)}
+.dis{display:inline-flex; align-items:center; gap:8px; background:none; border:0; padding:0;
+  font:inherit; color:inherit; cursor:pointer; font-weight:600; text-align:left}
+.dis:focus-visible{outline:2px solid var(--accent); outline-offset:3px; border-radius:4px}
+.chev{flex:none; width:9px; height:9px; display:block; color:var(--ink-3); transition:transform .15s ease}
+tr.soc.open .chev{transform:rotate(90deg); color:var(--accent)}
+.cnt{font-family:var(--font-m); font-size:10.5px; font-weight:500; color:var(--ink-3);
+  background:var(--surface); border:1px solid var(--line); padding:1px 7px; border-radius:20px}
+.cnt.al{color:var(--warn); border-color:var(--warn); background:var(--warn-soft)}
+tr.ped td:first-child{padding-left:38px}
 tr.soc td{font-weight:600; padding-top:11px; padding-bottom:11px}
 tr.soc td.num{font-weight:600}
 tr.ped:hover{background:var(--surface-2)}
@@ -278,7 +288,7 @@ footer{margin-top:40px; padding-top:18px; border-top:1px solid var(--line); colo
           <p id="pTabla"></p>
         </div>
         <div class="meses">
-          <button type="button" class="fbtn" id="bAbrir">Abrir todos los detalles</button>
+          <button type="button" class="fbtn" id="bAbrir">Abrir todas las sociedades</button>
         </div>
       </div>
       <div class="panel">
@@ -378,7 +388,12 @@ const recordar = n => { QUIEN = n; try { n ? localStorage.setItem("pedidos_quien
 const ident = () => TOKEN ? {u:TOKEN} : {quien:QUIEN};
 let S = null;              // respuesta del backend
 let grupoSel = null, mesSel = iniMes(D.hasta), hisTodos = false;
-const abiertos = new Set();
+const abiertos = new Set();          // detalles abiertos (por pedido)
+// sociedades desplegadas, recordadas por grupo en este navegador
+let socAb = {};
+try { socAb = JSON.parse(localStorage.getItem("pedidos_socs") || "{}"); } catch(e){}
+const socsAbiertas = () => new Set(socAb[grupoSel] || []);
+function guardarSocs(set){ socAb[grupoSel] = [...set]; try { localStorage.setItem("pedidos_socs", JSON.stringify(socAb)); } catch(e){} }
 let pend = 0;
 
 function puedeEditar(g){ return !!S && (S.yo.admin || S.yo.grupo === g); }
@@ -534,19 +549,26 @@ function pintarTabla(fs){
   const ed = puedeEditar(grupoSel);
   const {d0,d1} = rango();
   $("#pTabla").textContent = ed
-    ? "Prende o apaga, cambia los diarios o abre el detalle para el tipo de anuncio y las notas. Todo se guarda solo."
-    : `Solo lectura: tu link edita ${S.yo.grupo}.`;
+    ? "Toca una sociedad para ver sus zonas. Ahí prendes o apagas, cambias los diarios o abres el detalle para el tipo de anuncio y las notas. Todo se guarda solo."
+    : `Toca una sociedad para ver sus zonas. Aquí solo puedes mirar: tú editas ${S.yo.grupo}.`;
   const socs = new Map();
   for(const f of fs){ if(!socs.has(f.soc)) socs.set(f.soc,[]); socs.get(f.soc).push(f); }
   const orden = [...socs.keys()].sort((a,b)=>a.localeCompare(b,"es"));
   let h = "";
+  const socOpen = socsAbiertas();
+  const CHEV = `<svg class="chev" viewBox="0 0 10 10" aria-hidden="true"><path d="M3 1.5 7 5 3 8.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`;
   for(const soc of orden){
     const g = socs.get(soc).sort((a,b)=> (b.p.estado==="Prendida")-(a.p.estado==="Prendida") || a.zona.localeCompare(b.zona,"es"));
     const esp=g.reduce((s,f)=>s+f.esp,0), lle=g.reduce((s,f)=>s+(f.lle||0),0);
     const on=g.filter(f=>f.p.estado==="Prendida"), hoy=on.reduce((s,f)=>s+(+f.p.diarios||0),0);
-    h += `<tr class="soc"><td class="l">${esc(soc)} <span class="an" style="display:inline;margin-left:6px">${on.length} de ${g.length} prendidos</span></td>
+    const ab = socOpen.has(soc);
+    // cerrada no debe esconder problemas: cuenta los conjuntos con alguna alerta
+    const nAl = g.filter(f=>(!f.a && f.p.estado==="Prendida") || sinEntregar(f.p) || apagadaEntregando(f.p)).length;
+    h += `<tr class="soc ${ab?"open":""}" data-soc="${esc(soc)}"><td class="l"><button type="button" class="dis" aria-expanded="${ab}">${CHEV}${esc(soc)}</button>
+      <span class="cnt" style="margin-left:8px">${on.length} de ${g.length} prendidos</span>${nAl?` <span class="cnt al" title="Conjuntos con alguna alerta">${nAl} con alerta</span>`:""}</td>
       <td></td><td class="num">${nf.format(hoy)}</td><td class="num">${nf.format(esp)}</td><td class="num">${nf.format(lle)}</td>
       <td class="num">${difHtml(esp,lle)}</td><td class="num">${cumHtml(esp,lle)}</td><td></td></tr>`;
+    if(!ab) continue;
     for(const f of g){
       const p=f.p, on=p.estado==="Prendida", ab=abiertos.has(p.id);
       const fl=[];
@@ -576,7 +598,13 @@ function pintarTabla(fs){
     }
   }
   $("#tbl tbody").innerHTML = h || `<tr><td colspan="8" class="vac">${esc(grupoSel)} todavía no tiene conjuntos en su lista.</td></tr>`;
-  $("#bAbrir").textContent = abiertos.size ? "Cerrar los detalles" : "Abrir todos los detalles";
+  const todas = orden.length && orden.every(x=>socOpen.has(x));
+  $("#bAbrir").textContent = todas ? "Cerrar todas las sociedades" : "Abrir todas las sociedades";
+  $("#bAbrir").onclick = () => { guardarSocs(todas ? new Set() : new Set(orden)); pintar(); };
+  $("#tbl").querySelectorAll("tr.soc").forEach(tr=>tr.onclick=()=>{
+    const set = socsAbiertas(), so = tr.dataset.soc;
+    set.has(so) ? set.delete(so) : set.add(so); guardarSocs(set); pintar();
+  });
 
   const pid = el => el.closest("[data-id]").dataset.id;
   const ped = id => S.pedidos.find(p=>p.id===id);
@@ -662,10 +690,7 @@ function pintar(){
 }
 document.addEventListener("focusout", ()=>setTimeout(()=>{ if(pintar.pend) pintar(); }, 50));
 
-$("#bAbrir").onclick=()=>{
-  if(abiertos.size) abiertos.clear(); else S.pedidos.filter(p=>p.grupo===grupoSel).forEach(p=>abiertos.add(p.id));
-  pintar();
-};
+
 $("#bHisTodos").onclick=()=>{ hisTodos=!hisTodos; pintarHistorial(); };
 $("#corteFecha").textContent = `${+D.hasta.slice(8)} de ${MES[+D.hasta.slice(5,7)].toLowerCase()}`;
 
