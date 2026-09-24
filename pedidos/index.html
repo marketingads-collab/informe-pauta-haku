@@ -197,6 +197,8 @@ textarea.cob:disabled{background:transparent}
   border:1px solid var(--line); border-radius:8px; padding:6px 10px; min-width:200px; max-width:100%}
 .add .grow{flex:1 1 280px}
 .add .grow select{width:100%}
+.addtit{flex:0 0 100%; font-size:13.5px; color:var(--ink-2); margin-bottom:2px}
+.addtit b{color:var(--ink); font-weight:600}
 
 /* historial */
 .his{list-style:none; margin:0; padding:0}
@@ -523,15 +525,15 @@ function textoCambio(h){
   if(h.campo==="baja") return `quitó el conjunto (estaba ${esc(h.antes)})`;
   if(h.campo==="estado") return `lo pasó a <b>${esc(h.despues)}</b>`;
   if(h.campo==="diarios") return `diarios <b>${esc(h.antes===""?"—":h.antes)} → ${esc(h.despues)}</b>`;
-  if(h.campo==="perfiles") return `perfiles: ${esc(g(h.despues))}`;
-  if(h.campo==="cobertura") return `cobertura: “${esc(h.despues||"(vacía)")}”`;
+  if(h.campo==="perfiles") return `tipo de anuncio: ${esc(g(h.despues))}`;
+  if(h.campo==="cobertura") return `notas: “${esc(h.despues||"(vacías)")}”`;
   return esc(h.campo);
 }
 function pintarTabla(fs){
   const ed = puedeEditar(grupoSel);
   const {d0,d1} = rango();
   $("#pTabla").textContent = ed
-    ? "Prende o apaga, cambia los diarios o abre el detalle para los perfiles y la cobertura. Todo se guarda solo."
+    ? "Prende o apaga, cambia los diarios o abre el detalle para el tipo de anuncio y las notas. Todo se guarda solo."
     : `Solo lectura: tu link edita ${S.yo.grupo}.`;
   const socs = new Map();
   for(const f of fs){ if(!socs.has(f.soc)) socs.set(f.soc,[]); socs.get(f.soc).push(f); }
@@ -564,9 +566,9 @@ function pintarTabla(fs){
         const per = String(p.perfiles||"").split("|").filter(Boolean);
         const mh = S.historial.filter(x=>x.pedido_id===p.id).sort((a,b)=>a.fecha<b.fecha?1:-1).slice(0,12);
         h += `<tr class="detrow" id="d-${esc(p.id)}" data-id="${esc(p.id)}"><td colspan="8"><div class="dgrid">
-          <div><div class="dlbl">Perfiles que quiere</div><div class="perfs">${PERFILES.map(x=>
+          <div><div class="dlbl">Tipo de anuncio</div><div class="perfs">${PERFILES.map(x=>
             `<button type="button" class="pchk" data-v="${esc(x)}" aria-pressed="${per.includes(x)}" ${ed?"":"disabled"}>${esc(x)}</button>`).join("")}</div></div>
-          <div><div class="dlbl">Cobertura / instrucciones</div><textarea class="cob" maxlength="500" placeholder="Ej: concentrar en Villavicencio" ${ed?"":"disabled"}>${esc(p.cobertura)}</textarea></div>
+          <div><div class="dlbl">Notas adicionales</div><textarea class="cob" maxlength="500" placeholder="Ej: concentrar en Villavicencio" ${ed?"":"disabled"}>${esc(p.cobertura)}</textarea></div>
           <div><div class="dlbl">Últimos cambios</div><ul class="mhis">${mh.map(x=>`<li><b>${esc(x.nombre)}</b> · ${cuando(x.fecha)}<br>${textoCambio(x)}</li>`).join("") || "<li>Sin cambios</li>"}</ul></div>
           </div>${ed?`<div class="dacts"><button type="button" class="fbtn mal quitar">Quitar de la lista</button></div>`:""}</td></tr>`;
       }
@@ -606,17 +608,23 @@ function pintarAgregar(){
   if(!puedeEditar(grupoSel)){ el.hidden=true; return; }
   el.hidden=false;
   const ya = new Set(S.pedidos.filter(p=>p.grupo===grupoSel).map(p=>canon(p.adset)));
-  const socs = [...new Set(D.adsets.map(a=>a[1]))].sort((a,b)=>a.localeCompare(b,"es"));
-  const socSel = el.dataset.soc || "";
+  // solo sociedades que todavia tienen conjuntos por agregar
+  const libres = D.adsets.filter(([n])=>!ya.has(canon(n)));
+  const socs = [...new Set(libres.map(a=>a[1]))].sort((a,b)=>a.localeCompare(b,"es"));
+  const intro = `<div class="addtit"><b>¿Tu call necesita leads de un conjunto que no está en la tabla?</b>
+    Agrégalo aquí: eliges la sociedad, el conjunto y cuántos leads diarios quieres. Entra a tu lista ya prendido.</div>`;
+  if(!socs.length){ el.innerHTML = `<div class="addtit"><b>Tu lista ya tiene todos los conjuntos de Call que existen en Meta.</b>
+    Cuando Haku cree uno nuevo, aparecerá aquí para que lo agregues.</div>`; return; }
+  const socSel = socs.includes(el.dataset.soc) ? el.dataset.soc : "";
   const d7 = mas(D.hasta,-6);
-  const ops = D.adsets.filter(([n,s])=>s===socSel && !ya.has(canon(n)))
+  const ops = libres.filter(([,s])=>s===socSel)
     .map(([n,,z])=>({n,z,l:llevamos(n,grupoSel,d7,D.hasta)||0}))
     .sort((a,b)=>b.l-a.l || a.z.localeCompare(b.z,"es"));
-  el.innerHTML = `
-    <label>Sociedad<select id="aSoc"><option value="">Elige…</option>${socs.map(s=>`<option ${s===socSel?"selected":""}>${esc(s)}</option>`).join("")}</select></label>
-    <label class="grow">Conjunto de Meta<select id="aAds" ${socSel?"":"disabled"}>${socSel? (ops.length? ops.map(o=>`<option value="${esc(o.n)}">${esc(o.z)} — ${esc(o.n)} · ${nf.format(o.l)} leads en 7 días</option>`).join("") : `<option value="">Ya están todos en la lista</option>`) : `<option>Primero elige la sociedad</option>`}</select></label>
-    <label>Pide / día<input class="nd" id="aDia" type="number" min="0" max="5000" value="10"></label>
-    <button type="button" class="fbtn pri" id="aBtn" ${socSel && ops.length?"":"disabled"}>Agregar prendido</button>`;
+  el.innerHTML = intro + `
+    <label>1 · Sociedad<select id="aSoc"><option value="">Elige…</option>${socs.map(s=>`<option ${s===socSel?"selected":""}>${esc(s)}</option>`).join("")}</select></label>
+    <label class="grow">2 · Conjunto de anuncios<select id="aAds" ${socSel?"":"disabled"}>${socSel? ops.map(o=>`<option value="${esc(o.n)}">${esc(o.z)} · ${nf.format(o.l)} leads la última semana</option>`).join("") : `<option>Primero elige la sociedad</option>`}</select></label>
+    <label>3 · Leads diarios<input class="nd" id="aDia" type="number" min="0" max="5000" value="10"></label>
+    <button type="button" class="fbtn pri" id="aBtn" ${socSel && ops.length?"":"disabled"}>Agregar a la lista</button>`;
   $("#aSoc").onchange=e=>{ el.dataset.soc=e.target.value; pintarAgregar(); };
   const b=$("#aBtn");
   b.onclick=async()=>{
@@ -631,15 +639,15 @@ function pintarAgregar(){
 function pintarHistorial(){
   $("#bHisTodos").setAttribute("aria-pressed", hisTodos);
   const zona = h => enMeta(h.adset)?.zona;
-  const CARGA = "Carga inicial (Excel)";
+  const esCarga = h => String(h.nombre).startsWith("Carga inicial");
   const todos = S.historial.filter(h=>hisTodos || h.grupo===grupoSel);
-  const hs = todos.filter(h=>h.nombre!==CARGA).sort((a,b)=>a.fecha<b.fecha?1:-1).slice(0,150);
-  const nCarga = new Set(todos.filter(h=>h.nombre===CARGA).map(h=>h.pedido_id)).size;
+  const hs = todos.filter(h=>!esCarga(h)).sort((a,b)=>a.fecha<b.fecha?1:-1).slice(0,150);
+  const nCarga = new Set(todos.filter(esCarga).map(h=>h.pedido_id)).size;
   $("#his").innerHTML = hs.map(h=>{
     const soc = S.pedidos.find(p=>p.id===h.pedido_id)?.sociedad || enMeta(h.adset)?.soc || "";
     return `<li><span class="cu">${cuando(h.fecha)}</span><span class="qu"><b>${esc(h.nombre)}</b>${hisTodos?`<span class="gr">${esc(h.grupo)}</span>`:""}
       — ${esc(soc)} ${esc(zona(h)||h.adset)}: ${textoCambio(h)}</span></li>`;
-  }).join("") + (nCarga ? `<li><span class="cu">${cuando(D.desde+"T00:00:00")}</span><span class="qu"><b>Carga inicial</b> — ${nCarga} conjuntos pasados del Excel del call, con lo que tenía anotado.</span></li>` : "")
+  }).join("") + (nCarga ? `<li><span class="cu">${cuando(D.desde+"T00:00:00")}</span><span class="qu"><b>Carga inicial</b> — ${nCarga} conjuntos pasados de los Excel de los calls, con lo que tenían anotado.</span></li>` : "")
     || `<li class="vac" style="display:block">Todavía no hay cambios.</li>`;
 }
 function pintar(){
