@@ -506,9 +506,10 @@ function sinEntregar(p){
   return fs.filter(([,f])=>f>=d0).reduce((s,[, ,l])=>s+l,0) === 0;
 }
 // Apagado en el pedido pero Meta sigue entregando, y ningun otro grupo lo tiene prendido:
-// es plata que se esta gastando en leads que nadie pidio.
+// es plata que se esta gastando en leads que nadie pidio. Solo la ve Haku (admin):
+// es una alerta para ajustar la pauta, no algo que el call tenga que resolver.
 function apagadaEntregando(p){
-  if(p.estado==="Prendida") return false;
+  if(!S.yo.admin || p.estado==="Prendida") return false;
   if(S.pedidos.some(q=>q.estado==="Prendida" && canon(q.adset)===canon(p.adset))) return false;
   const fs = filasGrupo(p.adset, p.grupo); if(!fs) return false;
   const d0 = mas(D.hasta,-1);
