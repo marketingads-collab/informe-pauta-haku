@@ -223,6 +223,18 @@ footer{margin-top:40px; padding-top:18px; border-top:1px solid var(--line); colo
 .gate{max-width:520px; margin:60px auto; text-align:center; padding:30px 24px}
 .gate h2{margin-bottom:8px}
 .gate p{color:var(--ink-2)}
+.gate form{display:flex; flex-direction:column; gap:12px; text-align:left; margin-top:18px}
+.gate label{display:flex; flex-direction:column; gap:5px; font-family:var(--font-m); font-size:10.5px;
+  letter-spacing:.1em; text-transform:uppercase; color:var(--ink-3)}
+.gate select,.gate input{font-family:var(--font-d); font-size:15px; color:var(--ink); background:var(--surface);
+  border:1px solid var(--line); border-radius:8px; padding:9px 11px; text-transform:none; letter-spacing:0}
+.gate select:focus,.gate input:focus{outline:2px solid var(--accent); outline-offset:0; border-color:var(--accent)}
+.gate .fbtn{font-size:13px; padding:9px 14px; align-self:stretch}
+.gate .otro{background:none; border:0; color:var(--accent-ink); font:inherit; font-size:13.5px; cursor:pointer; text-decoration:underline; text-underline-offset:3px; padding:4px}
+.gate .err{color:var(--bad); font-size:13px; min-height:1em; margin:0}
+.cambiar{background:none; border:0; border-left:1px solid var(--line); margin-left:4px; padding:0 0 0 9px;
+  font:inherit; color:var(--accent-ink); cursor:pointer}
+.cambiar:hover{text-decoration:underline}
 @media (max-width:430px){ table{font-size:12.5px} th,td{padding:8px 9px} }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -235,7 +247,7 @@ footer{margin-top:40px; padding-top:18px; border-top:1px solid var(--line); colo
     <h1>Pedidos de leads</h1>
     <p class="sub">Aquí cada call pide cuántos leads diarios quiere por conjunto de anuncios, y ve cuántos le ha entregado Meta. Cada cambio queda firmado con nombre y hora.</p>
     <div class="metas">
-      <span class="corte yo" id="yoBadge" hidden><span class="pt"></span><span id="yoTxt"></span></span>
+      <span class="corte yo" id="yoBadge" hidden><span class="pt"></span><span id="yoTxt"></span><button type="button" class="cambiar" id="bCambiar">Cambiar</button></span>
       <span class="corte"><span class="pt"></span>Leads de Meta hasta el <b id="corteFecha"></b></span>
     </div>
     <div class="gtabs" id="gtabs" role="group" aria-label="Grupo"></div>
@@ -355,8 +367,13 @@ function llevamos(nombre, grupo, d0, d1){
 }
 
 // ---------- estado ----------
-let TOKEN = new URLSearchParams(location.search).get("u");
-try { if(TOKEN) localStorage.setItem("pedidos_u", TOKEN); else TOKEN = localStorage.getItem("pedidos_u"); } catch(e){}
+// Un solo link para todos: la persona elige su nombre y el navegador lo recuerda.
+// Los links viejos con ?u=TOKEN siguen entrando directo.
+const TOKEN = new URLSearchParams(location.search).get("u");
+let QUIEN = null;
+try { QUIEN = localStorage.getItem("pedidos_quien"); } catch(e){}
+const recordar = n => { QUIEN = n; try { n ? localStorage.setItem("pedidos_quien", n) : localStorage.removeItem("pedidos_quien"); } catch(e){} };
+const ident = () => TOKEN ? {u:TOKEN} : {quien:QUIEN};
 let S = null;              // respuesta del backend
 let grupoSel = null, mesSel = iniMes(D.hasta), hisTodos = false;
 const abiertos = new Set();
@@ -418,13 +435,13 @@ function aviso(txt, err=false, ms=2200){
   clearTimeout(aviso.t); if(ms) aviso.t=setTimeout(()=>el.classList.remove("on"), ms);
 }
 async function cargar(){
-  const r = await fetch(API+"?u="+encodeURIComponent(TOKEN)); return r.json();
+  const r = await fetch(API+"?"+new URLSearchParams(ident())); return r.json();
 }
 async function enviar(cuerpo){
   pend++; aviso("Guardando…", false, 0);
   try{
     const r = await fetch(API, {method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"},
-      body: JSON.stringify({...cuerpo, u:TOKEN})});
+      body: JSON.stringify({...cuerpo, ...ident()})});
     const j = await r.json();
     if(!j.ok) throw new Error(j.error||"error");
     S = j; pend--;
@@ -433,7 +450,7 @@ async function enviar(cuerpo){
     return true;
   }catch(e){
     pend--;
-    const m = {link_invalido:"Tu link ya no es válido", ocupado:"Otra persona está guardando, intenta de nuevo"}[e.message] || e.message;
+    const m = {link_invalido:"Tu usuario ya no está activo", ocupado:"Otra persona está guardando, intenta de nuevo"}[e.message] || e.message;
     aviso("No se guardó: "+m, true, 6000);
     pintar();
     return false;
@@ -646,22 +663,65 @@ $("#corteFecha").textContent = `${+D.hasta.slice(8)} de ${MES[+D.hasta.slice(5,7
 function portero(titulo, txt){
   $("#gate").innerHTML = `<h2>${esc(titulo)}</h2><p>${esc(txt)}</p>`; $("#gate").hidden=false; $("#app").hidden=true;
 }
-(async()=>{
-  if(!TOKEN) return portero("Necesitas tu link personal", "Esta página se abre con el link que te envió Haku. Pídelo si no lo tienes.");
+// "¿Quien eres?": lista de nombres + "No estoy en la lista" para registrarse solo.
+async function login(msg=""){
+  $("#yoBadge").hidden = true;
+  portero("Cargando…", "");
+  let j;
+  try { j = await (await fetch(API+"?accion=personas")).json(); }
+  catch(e){ return portero("No se pudo cargar", "Revisa tu conexión y recarga la página."); }
+  const ps = j.personas || [];
+  $("#gate").innerHTML = `<h2>¿Quién eres?</h2>
+    <p>Elige tu nombre. Así queda firmado cada cambio que hagas. Esta página lo recuerda la próxima vez.</p>
+    <form id="fYo">
+      <label>Tu nombre<select id="lNom" required><option value="">Elige…</option>${ps.map(p=>`<option value="${esc(p.nombre)}">${esc(p.nombre)} · ${esc(p.grupo)}</option>`).join("")}</select></label>
+      <button type="submit" class="fbtn pri">Entrar</button>
+      <p class="err" id="lErr">${esc(msg)}</p>
+    </form>
+    <button type="button" class="otro" id="lOtro">No estoy en la lista</button>
+    <form id="fNuevo" hidden>
+      <label>Nombre y apellido<input id="nNom" maxlength="40" autocomplete="name" required></label>
+      <label>Tu grupo<select id="nGru" required><option value="">Elige…</option>${(j.grupos||[]).map(g=>`<option>${esc(g)}</option>`).join("")}</select></label>
+      <button type="submit" class="fbtn pri">Registrarme y entrar</button>
+      <p class="err" id="nErr"></p>
+    </form>`;
+  $("#fYo").onsubmit = e => { e.preventDefault(); if(!$("#lNom").value) return; recordar($("#lNom").value); entrar(); };
+  $("#lOtro").onclick = () => { $("#fNuevo").hidden = false; $("#lOtro").hidden = true; $("#nNom").focus(); };
+  $("#fNuevo").onsubmit = async e => {
+    e.preventDefault();
+    const b = e.target.querySelector("button"); b.disabled = true; $("#nErr").textContent = "";
+    try{
+      const r = await (await fetch(API, {method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"},
+        body: JSON.stringify({accion:"registrar", nombre:$("#nNom").value, grupo:$("#nGru").value})})).json();
+      if(!r.ok) throw new Error(r.error);
+      recordar(r.yo.nombre); arrancar(r);
+    }catch(x){ $("#nErr").textContent = x.message || "No se pudo registrar"; b.disabled = false; }
+  };
+}
+function arrancar(j){
+  S = j;
+  grupoSel = S.grupos.includes(S.yo.grupo) ? S.yo.grupo : S.grupos[0];
+  $("#yoTxt").textContent = `${S.yo.nombre} · ${S.yo.admin ? "Haku (edita todo)" : S.yo.grupo}`;
+  $("#yoBadge").hidden = false; $("#bCambiar").hidden = !!TOKEN;
+  $("#gate").hidden = true; $("#app").hidden = false;
+  pintar();
+}
+async function entrar(){
+  if(!TOKEN && !QUIEN) return login();
   portero("Cargando pedidos…", "");
   try{
     const j = await cargar();
-    if(!j.ok) return portero("Este link no es válido", "Puede que haya cambiado. Pide tu link personal a Haku.");
-    S = j;
-    grupoSel = S.grupos.includes(S.yo.grupo) ? S.yo.grupo : S.grupos[0];
-    $("#yoTxt").textContent = `${S.yo.nombre} · ${S.yo.admin ? "Haku (edita todo)" : S.yo.grupo}`;
-    $("#yoBadge").hidden=false;
-    $("#gate").hidden=true; $("#app").hidden=false;
-    pintar();
+    if(!j.ok){
+      if(TOKEN) return portero("Este link ya no sirve", "Entra por el link general de pedidos y elige tu nombre.");
+      recordar(null); return login("Ese nombre ya no está activo. Elige otro o regístrate.");
+    }
+    arrancar(j);
   }catch(e){
     portero("No se pudo cargar", "Revisa tu conexión y recarga la página.");
   }
-})();
+}
+$("#bCambiar").onclick = () => { recordar(null); S = null; login(); };
+entrar();
 </script>
 </body>
 </html>
