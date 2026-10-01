@@ -1,0 +1,1304 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{color-scheme:light}body{margin:0;font:14px system-ui,-apple-system,sans-serif;background:#fafaf9}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Costo por Lead Haku</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root{
+  color-scheme: light;
+  --ground:#F2F5F6; --surface:#FFFFFF; --surface-2:#F7F9FA;
+  --line:#DCE4E7; --line-soft:#E9EFF1;
+  --ink:#0E1B20; --ink-2:#56686F; --ink-3:#85979E;
+  --accent:#008E9B; --accent-soft:#E0F2F4; --accent-ink:#00707B;
+  --serie-2:#DE7018; --serie-2-soft:#FBEADC;
+  --good:#1C7A55; --good-soft:#E2F1EA;
+  --warn:#9E6400; --warn-soft:#F8EFDC;
+  --bad:#B63A2C;  --bad-soft:#F9E7E4;
+  --wa:#1F7A55;   --wa-soft:#E2F1EA;
+  --shadow:0 1px 2px rgba(14,27,32,.06), 0 8px 24px -12px rgba(14,27,32,.14);
+  --font-d:"Archivo",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --font-m:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --ground:#0C1215; --surface:#151D21; --surface-2:#1B252A;
+    --line:#2A3940; --line-soft:#212D33;
+    --ink:#E9F1F3; --ink-2:#9BADB4; --ink-3:#74878F;
+    --accent:#00A0B0; --accent-soft:#0C2F35; --accent-ink:#34BCC9;
+    --serie-2:#D2762C; --serie-2-soft:#332313;
+    --good:#3FA57A; --good-soft:#12291F;
+    --warn:#C08A1E; --warn-soft:#2B2210;
+    --bad:#D9705F; --bad-soft:#2E1714;
+  --wa:#3FA57A;  --wa-soft:#12291F;
+    --wa:#3FA57A;  --wa-soft:#12291F;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --ground:#0C1215; --surface:#151D21; --surface-2:#1B252A;
+  --line:#2A3940; --line-soft:#212D33;
+  --ink:#E9F1F3; --ink-2:#9BADB4; --ink-3:#74878F;
+  --accent:#00A0B0; --accent-soft:#0C2F35; --accent-ink:#34BCC9;
+  --serie-2:#D2762C; --serie-2-soft:#332313;
+  --good:#3FA57A; --good-soft:#12291F;
+  --warn:#C08A1E; --warn-soft:#2B2210;
+  --bad:#D9705F; --bad-soft:#2E1714;
+  --wa:#3FA57A;  --wa-soft:#12291F;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--ground); color:var(--ink);
+  font-family:var(--font-d); font-size:15px; line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1080px; margin:0 auto; padding-inline:20px; padding-block:0 64px}
+h1,h2{text-wrap:balance; margin:0}
+.mono{font-family:var(--font-m); font-variant-numeric:tabular-nums}
+
+/* ---------- cabecera ---------- */
+.top{background:var(--surface); border-bottom:1px solid var(--line); position:relative; z-index:5}
+.top::after{
+  content:""; position:absolute; inset:0 0 auto auto; width:38%; height:100%;
+  background:repeating-linear-gradient(115deg, var(--accent) 0 2px, transparent 2px 13px);
+  opacity:.10; pointer-events:none;
+}
+.top-in{max-width:1080px; margin:0 auto; padding:26px 20px 0; position:relative}
+.eyebrow{font-family:var(--font-m); font-size:11px; font-weight:500;
+  letter-spacing:.16em; text-transform:uppercase; color:var(--accent-ink)}
+h1{font-size:clamp(26px,4.4vw,38px); font-weight:700; letter-spacing:-.025em; margin-top:6px}
+.sub{color:var(--ink-2); font-size:14.5px; max-width:62ch; margin-top:8px}
+.corte{display:inline-flex; align-items:center; gap:8px; margin:14px 0 0;
+  font-family:var(--font-m); font-size:12px; color:var(--ink-2);
+  background:var(--surface-2); border:1px solid var(--line);
+  padding:5px 11px 5px 9px; border-radius:20px}
+.corte b{color:var(--ink); font-weight:600}
+.corte .pt{width:7px; height:7px; border-radius:50%; background:var(--accent); flex:none}
+
+/* selector de mes */
+.months{display:flex; gap:6px; flex-wrap:wrap; margin-top:22px}
+.mbtn{font-family:var(--font-m); font-size:12px; font-weight:500; letter-spacing:.04em;
+  text-transform:uppercase; color:var(--ink-2); background:transparent;
+  border:0; border-bottom:2px solid transparent; padding:9px 11px 12px; cursor:pointer; white-space:nowrap}
+.mbtn:hover{color:var(--ink)}
+.mbtn[aria-pressed="true"]{color:var(--accent-ink); border-bottom-color:var(--accent); font-weight:600}
+.mbtn:focus-visible{outline:2px solid var(--accent); outline-offset:-2px; border-radius:3px}
+
+/* filtro por call (solo en la pestaña Informe de Solicitud de leads) */
+.gfilt{display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin:24px 0 26px; padding-bottom:18px; border-bottom:1px solid var(--line)}
+.gfilt .soclbl{margin-right:4px}
+/* ---------- secciones ---------- */
+section{margin-top:40px}
+section.first{margin-top:32px}
+.shead{margin-bottom:14px}
+h2{font-size:19px; font-weight:600; letter-spacing:-.015em}
+.shead p{margin:4px 0 0; color:var(--ink-2); font-size:13.5px; max-width:64ch}
+.panel{background:var(--surface); border:1px solid var(--line); border-radius:10px; box-shadow:var(--shadow)}
+
+/* ---------- chart ---------- */
+.chart-box{padding:18px 18px 10px}
+.chart-wrap svg{display:block; width:100%; height:auto; overflow:visible}
+.gridline{stroke:var(--line-soft); stroke-width:1}
+.axis-t{font-family:var(--font-m); font-size:10.5px; fill:var(--ink-3)}
+.chart-wrap{position:relative}
+.tip{position:absolute; pointer-events:none; opacity:0; transition:opacity .12s;
+  background:var(--surface); border:1px solid var(--line); border-radius:8px;
+  padding:9px 11px; box-shadow:var(--shadow); font-size:12.5px; z-index:20; min-width:128px}
+.tip b{font-family:var(--font-m); font-variant-numeric:tabular-nums; font-size:14px; letter-spacing:-.02em}
+.tip .r{display:flex; justify-content:space-between; gap:14px; color:var(--ink-2)}
+.tip .r span:last-child{font-family:var(--font-m); font-variant-numeric:tabular-nums; color:var(--ink)}
+
+/* ---------- selector de sociedad + leyenda ---------- */
+.socbar{display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;
+  padding:14px 18px 12px; border-bottom:1px solid var(--line-soft)}
+.soclbl{font-family:var(--font-m); font-size:10.5px; font-weight:500; letter-spacing:.13em;
+  text-transform:uppercase; color:var(--ink-3); flex:none}
+.socs{display:flex; gap:6px; flex-wrap:wrap}
+.hint{font-size:11.5px; color:var(--ink-3); font-style:italic; flex:none}
+.zsel{display:inline-flex; align-items:center; gap:7px; margin-left:auto; flex:none}
+.zsel>span{font-family:var(--font-m); font-size:10.5px; font-weight:500; letter-spacing:.13em;
+  text-transform:uppercase; color:var(--ink-3)}
+.zsel select{font-family:var(--font-d); font-size:12.5px; color:var(--ink);
+  background:var(--surface); border:1px solid var(--line); border-radius:20px;
+  padding:4px 26px 4px 11px; cursor:pointer; max-width:210px;
+  appearance:none; -webkit-appearance:none;
+  background-image:linear-gradient(45deg,transparent 50%,var(--ink-3) 50%),
+                   linear-gradient(135deg,var(--ink-3) 50%,transparent 50%);
+  background-position:calc(100% - 14px) 52%, calc(100% - 9px) 52%;
+  background-size:5px 5px, 5px 5px; background-repeat:no-repeat}
+.zsel select:hover{border-color:var(--ink-3)}
+.zsel select:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+@media (max-width:620px){ .zsel{margin-left:0; width:100%} .zsel select{flex:1; max-width:none} }
+.legend{display:flex; gap:18px; flex-wrap:wrap; align-items:center;
+  font-size:12.5px; color:var(--ink-2); padding:13px 18px 0}
+.legend i, .tip .r i{display:inline-block; width:9px; height:9px; border-radius:2px;
+  margin-right:7px; vertical-align:-1px}
+/* la segunda sociedad va rayada: mismo color, distinta textura */
+.legend i.punt, .tip .r i.punt{
+  background-image:repeating-linear-gradient(45deg,
+    rgba(255,255,255,.85) 0 1.5px, transparent 1.5px 3px)}
+.tip .r i{margin-right:6px}
+.legend:empty{display:none}
+
+/* ---------- tablas ---------- */
+.tscroll{overflow-x:auto}
+table{width:100%; border-collapse:collapse; font-size:13.5px}
+th,td{text-align:right; padding:9px 12px; white-space:nowrap}
+th:first-child,td:first-child,th.l,td.l{text-align:left}
+thead th{font-family:var(--font-m); font-size:10.5px; font-weight:500; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--ink-3); border-bottom:1px solid var(--line);
+  position:sticky; top:env(safe-area-inset-top, 0px); background:var(--surface); z-index:2}
+tbody tr{border-bottom:1px solid var(--line-soft)}
+tbody tr:last-child{border-bottom:0}
+tbody tr:hover{background:var(--surface-2)}
+td.num,th.num{font-family:var(--font-m); font-variant-numeric:tabular-nums; letter-spacing:-.02em}
+.bar{position:relative; min-width:104px}
+.bar i{display:block; height:7px; border-radius:0 3px 3px 0; background:var(--accent); opacity:.85}
+/* la barra se pasa del tope de la escala: se corta en diagonal */
+.bar i.over{border-radius:0; clip-path:polygon(0 0, calc(100% - 5px) 0, 100% 50%, calc(100% - 5px) 100%, 0 100%)}
+
+/* ---------- tabla desplegable ---------- */
+.tbar{display:flex; align-items:center; justify-content:space-between; gap:14px 18px; flex-wrap:wrap;
+  padding:13px 18px; border-bottom:1px solid var(--line-soft)}
+.tacts{display:flex; align-items:center; gap:6px; flex-wrap:wrap}
+.tacts .soclbl{margin-right:2px}
+#toggleAll{margin-left:10px}
+tr.soc{cursor:pointer; border-top:1px solid var(--line)}
+tbody tr.soc:first-child{border-top:0}
+.dis{display:inline-flex; align-items:center; gap:7px; background:none; border:0; padding:0;
+  font:inherit; color:inherit; cursor:pointer; font-weight:600; text-align:left}
+.dis:focus-visible{outline:2px solid var(--accent); outline-offset:3px; border-radius:4px}
+.chev{flex:none; width:9px; height:9px; display:block; color:var(--ink-3); transition:transform .15s ease}
+tr.soc.open .chev{transform:rotate(90deg); color:var(--accent)}
+.cnt{font-family:var(--font-m); font-size:10.5px; font-weight:500; letter-spacing:.04em;
+  color:var(--ink-3); background:var(--surface-2); border:1px solid var(--line);
+  padding:1.5px 6px; border-radius:20px}
+/* pestañas Call / Sala */
+.tabs{display:flex; gap:2px; padding:0 12px; border-bottom:1px solid var(--line)}
+.tab{font-family:var(--font-d); font-size:14px; font-weight:600; color:var(--ink-3);
+  background:none; border:0; border-bottom:2px solid transparent;
+  padding:13px 14px 11px; cursor:pointer; white-space:nowrap}
+.tab:hover{color:var(--ink-2)}
+.tab[aria-pressed="true"]{color:var(--c); border-bottom-color:var(--c)}
+.tab:focus-visible{outline:2px solid var(--c); outline-offset:-3px; border-radius:4px}
+.tabn{font-family:var(--font-m); font-size:11px; font-weight:500; margin-left:5px;
+  padding:1.5px 6px; border-radius:20px; background:var(--surface-2);
+  border:1px solid var(--line); color:var(--ink-3); vertical-align:1px}
+.tab[aria-pressed="true"] .tabn{color:var(--c); border-color:currentColor}
+/* zonas */
+tr.zona{background:var(--surface-2); border-bottom:0}
+tr.zona > td{padding-top:6px; padding-bottom:6px}
+tr.zona .bar i{opacity:.45; height:6px}
+tr.zona:hover{background:var(--line-soft)}
+.zname{padding-left:46px!important; font-size:13px; color:var(--ink-2); position:relative}
+.zname::before{content:""; position:absolute; left:28px; top:50%; width:9px; height:1px;
+  background:var(--ink-3); opacity:.45}
+
+/* chips */
+.chip{display:inline-block; font-family:var(--font-m); font-size:10.5px; font-weight:500;
+  letter-spacing:.05em; padding:2.5px 7px; border-radius:4px; text-transform:uppercase}
+.chip.call{background:var(--accent-soft); color:var(--accent-ink)}
+.chip.sala{background:var(--serie-2-soft); color:var(--serie-2)}
+.chip.otro{background:var(--surface-2); color:var(--ink-3); border:1px solid var(--line)}
+.aprox{color:var(--ink-3); margin-right:2px; font-weight:400; cursor:help}
+.tbar .tacts+.tacts{margin-left:auto}
+.fbtn.desc{border-color:var(--accent); color:var(--accent-ink); font-weight:600}
+.fbtn.desc:hover{background:var(--accent-soft)}
+.fbtn:disabled{opacity:.6; cursor:progress}
+
+/* ---------- barras del año ---------- */
+.bara{transition:opacity .12s}
+.chart-wrap:hover .bara{opacity:.55}
+.chart-wrap .bara:hover{opacity:1}
+@media (prefers-reduced-motion:reduce){.bara,.chart-wrap:hover .bara{transition:none}}
+
+/* ---------- matriz del año ---------- */
+#tblAnio th, #tblAnio td{padding:7px 10px}
+#tblAnio tbody td:first-child{font-weight:600; position:sticky; left:0;
+  background:var(--surface); z-index:1}
+#tblAnio tbody tr:hover td:first-child{background:var(--surface-2)}
+#tblAnio .cnt{margin-left:7px; font-weight:500}
+#tblAnio .heat{font-variant-numeric:tabular-nums}
+#tblAnio .vac{color:var(--ink-3); opacity:.5}
+#tblAnio .tot{font-weight:600; border-left:1px solid var(--line)}
+#tblAnio thead th.tot{color:var(--ink-2)}
+
+/* canal: formulario instantaneo vs conversacion de WhatsApp */
+.chip.form{background:var(--surface-2); color:var(--ink-2); border:1px solid var(--line)}
+.chip.wa{background:var(--wa-soft); color:var(--wa); border:1px solid transparent}
+td .chip+.chip{margin-left:4px}
+.delta{font-family:var(--font-m); font-variant-numeric:tabular-nums; font-size:12.5px;
+  padding:2px 6px; border-radius:4px; letter-spacing:-.01em}
+.delta.up{background:var(--bad-soft); color:var(--bad)}
+.delta.down{background:var(--good-soft); color:var(--good)}
+.delta.flat{color:var(--ink-3)}
+
+/* botones */
+.fbtn{font-family:var(--font-m); font-size:11.5px; letter-spacing:.03em; color:var(--ink-2);
+  background:var(--surface-2); border:1px solid var(--line); border-radius:20px;
+  padding:4px 11px; cursor:pointer}
+.fbtn:hover{border-color:var(--ink-3); color:var(--ink)}
+.fbtn[aria-pressed="true"]{background:var(--ink); color:var(--surface); border-color:var(--ink)}
+.fbtn:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+
+/* leyenda de tipo */
+.tipos{display:flex; gap:16px; flex-wrap:wrap; align-items:center;
+  font-size:12.5px; color:var(--ink-2); padding:12px 18px 0}
+
+/* nota */
+.note{display:flex; gap:11px; align-items:flex-start; margin-top:14px; padding:13px 15px;
+  background:var(--warn-soft); border-radius:8px; font-size:13px; color:var(--ink-2); line-height:1.5}
+.note b{color:var(--ink); font-weight:600}
+.note .m{font-family:var(--font-m); color:var(--warn); font-weight:600; font-size:12px;
+  letter-spacing:.08em; flex:none; padding-top:1px}
+footer{margin-top:44px; padding-top:20px; border-top:1px solid var(--line);
+  color:var(--ink-3); font-size:12.5px; display:flex; justify-content:space-between; gap:14px; flex-wrap:wrap}
+
+/* ---------- selector de rango de fechas (como el de Meta) ---------- */
+.shead{display:flex; align-items:flex-end; justify-content:space-between; gap:12px 20px; flex-wrap:wrap}
+.shead>div:first-child{flex:1 1 320px; min-width:0}
+.rango{position:relative; flex:none}
+.rbtn{display:inline-flex; align-items:center; gap:9px; font-family:var(--font-d); font-size:13px;
+  color:var(--ink); background:var(--surface); border:1px solid var(--line); border-radius:8px;
+  padding:7px 11px; cursor:pointer; box-shadow:var(--shadow); text-align:left}
+.rbtn:hover{border-color:var(--ink-3)}
+.rbtn:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+.rbtn[aria-expanded="true"]{border-color:var(--accent)}
+.rbtn>svg{width:15px; height:15px; flex:none; color:var(--ink-3)}
+.rbtn .rtx{display:flex; flex-direction:column; line-height:1.25}
+.rbtn .rpn{font-size:11px; color:var(--ink-3)}
+.rbtn .rfx{font-weight:600; font-variant-numeric:tabular-nums}
+.rbtn .rch{width:9px; height:9px; margin-left:4px; transform:rotate(90deg); transition:transform .15s}
+.rbtn[aria-expanded="true"] .rch{transform:rotate(-90deg)}
+.rpop{position:absolute; right:0; top:calc(100% + 6px); z-index:60;
+  width:min(640px, calc(100vw - 32px)); background:var(--surface);
+  border:1px solid var(--line); border-radius:10px;
+  box-shadow:0 18px 48px -12px rgba(14,27,32,.32);
+  display:grid; grid-template-columns:168px 1fr; overflow:hidden}
+.rpop[hidden]{display:none}
+.rpres{display:flex; flex-direction:column; gap:1px; padding:8px; border-right:1px solid var(--line-soft)}
+.rpb{font:inherit; font-size:13px; color:var(--ink-2); text-align:left; background:none; border:0;
+  border-radius:6px; padding:7px 10px; cursor:pointer; white-space:nowrap}
+.rpb:hover:not(:disabled){background:var(--surface-2); color:var(--ink)}
+.rpb[aria-pressed="true"]{background:var(--accent-soft); color:var(--accent-ink); font-weight:600}
+.rpb:disabled{opacity:.4; cursor:default}
+.rpb:focus-visible,.rd:focus-visible,.rnav:focus-visible{outline:2px solid var(--accent); outline-offset:-2px}
+.rcal{position:relative; padding:14px 16px 10px}
+.rmeses{display:grid; grid-template-columns:1fr 1fr; gap:22px}
+.rmt{text-align:center; font-weight:600; font-size:13.5px; height:28px; line-height:28px; margin-bottom:4px}
+.rnav{position:absolute; top:14px; width:28px; height:28px; border-radius:6px; border:1px solid var(--line);
+  background:var(--surface); color:var(--ink-2); font-size:17px; line-height:1; cursor:pointer}
+.rnav:hover:not(:disabled){border-color:var(--ink-3); color:var(--ink)}
+.rnav:disabled{opacity:.35; cursor:default}
+.rnav.prev{left:16px} .rnav.next{right:16px}
+.rgrid{display:grid; grid-template-columns:repeat(7,1fr); row-gap:2px}
+.rdw{font-family:var(--font-m); font-size:10px; color:var(--ink-3); text-align:center; padding:4px 0 6px}
+.rd{font-family:var(--font-m); font-size:12.5px; font-variant-numeric:tabular-nums; color:var(--ink);
+  background:none; border:0; height:32px; cursor:pointer; border-radius:6px}
+.rd:hover:not(:disabled){background:var(--surface-2)}
+.rd:disabled{color:var(--ink-3); opacity:.4; cursor:default}
+.rd.in{background:var(--accent-soft); border-radius:0}
+.rd.ini,.rd.fin{background:var(--accent); color:#fff; font-weight:600}
+.rd.ini{border-radius:6px 0 0 6px} .rd.fin{border-radius:0 6px 6px 0} .rd.ini.fin{border-radius:6px}
+.rfoot{grid-column:1/-1; display:flex; align-items:center; justify-content:space-between; gap:10px;
+  flex-wrap:wrap; padding:10px 14px; border-top:1px solid var(--line-soft); background:var(--surface-2)}
+.rsel{font-family:var(--font-m); font-size:12px; color:var(--ink-2)}
+.racts{display:flex; gap:6px}
+@media (max-width:640px){
+  .rango,.rbtn{width:100%}
+  .rbtn .rch{margin-left:auto}
+  .rpop{left:0; right:auto; width:100%; grid-template-columns:1fr}
+  .rpres{flex-direction:row; overflow-x:auto; border-right:0; border-bottom:1px solid var(--line-soft)}
+  .rmeses{grid-template-columns:1fr}
+  .rmes+.rmes{display:none}
+}
+
+@media (max-width:760px){
+  .top-in{padding-top:20px}
+}
+@media (max-width:430px){
+  table{font-size:12.5px}
+  th,td{padding:8px 9px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important; animation:none!important}}
+</style>
+
+<div class="top">
+  <div class="top-in">
+    <div class="eyebrow">Haku Creativo · Pauta Meta</div>
+    <h1>Informe sociedades</h1>
+    <p class="sub">Cuántos leads entran y qué cuesta cada uno, en cada zona de cada sociedad. Los datos salen directo de Meta.</p>
+    <p class="corte" style="margin-bottom:24px"><span class="pt"></span>Datos hasta el <b id="corteFecha"></b></p>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="gfilt" id="gfilt" hidden></div>
+
+  <section class="first">
+    <div class="shead">
+      <div>
+        <h2>Cada sociedad, zona por zona</h2>
+        <p>Elige Call o Sala en las pestañas y toca una sociedad para ver sus zonas. La flecha compara el costo por lead contra los mismos días justo antes de las fechas elegidas.</p>
+      </div>
+      <div class="rango" data-rango></div>
+    </div>
+    <div class="panel">
+      <div class="tabs" id="tabs" role="group" aria-label="Tipo de lead"></div>
+      <div class="tbar">
+        <div class="tipos" id="tabHelp"></div>
+        <div class="tacts">
+          <span class="soclbl">Ver</span>
+          <button type="button" class="fbtn" id="vRes" aria-pressed="true">Resultados</button>
+          <button type="button" class="fbtn" id="vEnt" aria-pressed="false">Métricas secundarias</button>
+        </div>
+        <div class="tacts">
+          <span class="soclbl">Ordenar</span>
+          <button type="button" class="fbtn" id="ordNom" aria-pressed="true">Nombre</button>
+          <button type="button" class="fbtn" id="ordCpl" aria-pressed="false">Costo por lead</button>
+          <button type="button" class="fbtn" id="toggleAll" aria-pressed="false">Abrir todas</button>
+          <button type="button" class="fbtn desc" id="btnCsv">Descargar Excel</button>
+        </div>
+      </div>
+      <div class="tscroll">
+        <table id="tbl">
+          <thead></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="shead">
+      <div>
+        <h2>Día por día</h2>
+        <p>Leads que entraron cada día, separando los que van al call center de los que llegan a la sala. Puedes elegir dos sociedades para compararlas.</p>
+      </div>
+      <div class="rango" data-rango></div>
+    </div>
+    <div class="panel">
+      <div class="socbar">
+        <span class="soclbl">Sociedad</span>
+        <div class="socs" id="socs" role="group" aria-label="Elegir hasta dos sociedades"></div>
+        <span class="hint">toca dos para comparar</span>
+        <label class="zsel"><span>Zona</span>
+          <select id="selZona1" aria-label="Filtrar por zona"></select></label>
+      </div>
+      <div class="legend" id="legDia"></div>
+      <div class="chart-wrap chart-box">
+        <svg id="svgDia" viewBox="0 0 900 270" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Leads por día, separados en Call y Sala"></svg>
+        <div class="tip" id="tipDia"></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="shead">
+      <div>
+        <h2>Mes a mes por sociedad</h2>
+        <p id="anioSub"></p>
+      </div>
+      <div class="rango" data-rango></div>
+    </div>
+    <div class="panel">
+      <div class="tbar">
+        <div class="tacts">
+          <span class="soclbl">Ver</span>
+          <button type="button" class="fbtn" id="anLeads" aria-pressed="true">Leads</button>
+          <button type="button" class="fbtn" id="anCpl" aria-pressed="false">Costo por lead</button>
+        </div>
+      </div>
+      <div class="socbar">
+        <span class="soclbl">Sociedad</span>
+        <div class="socs" id="socs2" role="group" aria-label="Elegir hasta dos sociedades"></div>
+        <span class="hint">toca dos para comparar</span>
+        <label class="zsel"><span>Zona</span>
+          <select id="selZona2" aria-label="Filtrar por zona"></select></label>
+      </div>
+      <div class="legend" id="legAnio"></div>
+      <div class="chart-wrap chart-box">
+        <svg id="svgAnio" viewBox="0 0 900 300" preserveAspectRatio="xMidYMid meet"
+          role="img" aria-label="Leads por mes, separados en Call y Sala"></svg>
+        <div class="tip" id="tipAnio"></div>
+      </div>
+      <div class="tscroll">
+        <table id="tblAnio"><thead></thead><tbody></tbody></table>
+      </div>
+    </div>
+  </section>
+
+  <div class="note">
+    <span class="m">NOTA</span>
+    <span><b>Los últimos días todavía se mueven.</b> Meta sigue ajustando a qué día pertenece cada lead hasta 72 horas después, así que el dato de ayer puede cambiar un poco. Por eso el informe vuelve a traer el año completo cada vez que se actualiza, en lugar de solo agregar el día nuevo.</span>
+  </div>
+
+  <footer>
+    <span>Fuente: Meta · campañas de captación de leads</span>
+    <span class="mono" id="pie"></span>
+  </footer>
+</div>
+
+<script>
+const D = (window.parent.__INFORME_COMPLETO__ || {d:[],fechas:[],empresas:[],zonas:[],tipos:[],canales:[],hasta:''});
+// Modo "solo Call, sin costos" (pestaña Informe de Solicitud de leads): el payload
+// llega sin ningun dato de inversion, asi que aqui solo se ajustan textos y columnas.
+const SC = !!D.sinCosto;
+const MES = ["","Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+const MES3 = ["","Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const miles = n => Math.round(n).toLocaleString("es-CO");
+const pesos = n => "$" + miles(n);
+
+// ---------- filas diarias ----------
+// D.d = [fecha, sociedad, zona, tipo, canal, leads, x, impresiones, alcance, clics]
+// x = CPL del dia si hubo leads; si no hubo, lo que costo ese dia sin leads.
+// Con eso el CPL de cualquier rango sale exacto: costo total / leads totales.
+const FILAS_TODAS = D.d.map(r=>({f:D.fechas[r[0]], e:r[1], z:r[2], t:r[3], ca:r[4], l:r[5],
+  cost: r[5]>0 ? (r[6]??0)*r[5] : (r[6]??0), imp:r[7], alc:r[8], clk:r[9]}));
+let FILAS = FILAS_TODAS;       // se reduce cuando se filtra por call
+const F_MIN = D.fechas[0], F_MAX = D.hasta;
+
+const enRango = rg => FILAS.filter(r=>r.f>=rg.d && r.f<=rg.h);
+function sumar(filas, clave){
+  const m=new Map();
+  filas.forEach(r=>{
+    const k=clave(r); if(k==null) return;
+    let a=m.get(k); if(!a){ a={l:0,cost:0,imp:0,alc:0,clk:0}; m.set(k,a); }
+    a.l+=r.l; a.cost+=r.cost; a.imp+=r.imp; a.alc+=r.alc; a.clk+=r.clk;
+  });
+  return m;
+}
+// el CPL de un grupo se recalcula con el costo: nunca se promedian CPL
+const cplDe = a => a && a.l>0 && a.cost>0 ? Math.round(a.cost/a.l) : null;
+// [impresiones, alcance, clics, frecuencia*100, ctr*100]
+const metDe = a => [a.imp, a.alc, a.clk,
+  a.alc ? Math.round(a.imp/a.alc*100) : 0, a.alc ? Math.round(a.clk/a.alc*10000) : 0];
+
+// ---------- fechas ("AAAA-MM-DD", a mediodia UTC para no pelear con husos) ----------
+const aD = s => new Date(s+"T12:00:00Z");
+const aS = d => d.toISOString().slice(0,10);
+const mas = (s,n) => { const d=aD(s); d.setUTCDate(d.getUTCDate()+n); return aS(d); };
+const diasEntre = (a,b) => Math.round((aD(b)-aD(a))/864e5);
+const minS = (a,b) => a<b?a:b, maxS = (a,b) => a>b?a:b;
+const iniMes = s => s.slice(0,8)+"01";
+const finMes = s => mas(iniMes(mas(iniMes(s),32)),-1);
+const lunes = s => mas(s, -((aD(s).getUTCDay()+6)%7));
+const mm = m => MES3[m].toLowerCase();
+const corta = s => `${+s.slice(8)} ${mm(+s.slice(5,7))}`;
+const larga = s => `${+s.slice(8)} de ${MES[+s.slice(5,7)].toLowerCase()} de ${s.slice(0,4)}`;
+function fmtRango(d,h){
+  const [y1,m1,d1]=d.split("-").map(Number), [y2,m2,d2]=h.split("-").map(Number);
+  if(d===h) return `${d2} ${mm(m2)} ${y2}`;
+  if(y1===y2 && m1===m2) return `${d1} – ${d2} ${mm(m2)} ${y2}`;
+  if(y1===y2) return `${d1} ${mm(m1)} – ${d2} ${mm(m2)} ${y2}`;
+  return `${d1} ${mm(m1)} ${y1} – ${d2} ${mm(m2)} ${y2}`;
+}
+
+// Los rangos rapidos se cuentan desde el ultimo dia con datos, no desde el reloj:
+// si el informe se actualizo hace unos dias, "ultimos 7 dias" no sale vacio.
+const HOY = (()=>{ const d=new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; })();
+const A = F_MAX, ES_HOY = A===HOY;
+const PRESETS = [
+  ["hoy",  ES_HOY ? "Hoy" : `Último día (${corta(A)})`, A, A],
+  ["ayer", ES_HOY ? "Ayer" : "Día anterior",            mas(A,-1), mas(A,-1)],
+  ["u7",   "Últimos 7 días",   mas(A,-7),  mas(A,-1)],
+  ["u14",  "Últimos 14 días",  mas(A,-14), mas(A,-1)],
+  ["u30",  "Últimos 30 días",  mas(A,-30), mas(A,-1)],
+  ["sem",  "Esta semana",      lunes(A), A],
+  ["semp", "Semana pasada",    mas(lunes(A),-7), mas(lunes(A),-1)],
+  ["mes",  "Este mes",         iniMes(A), A],
+  ["mesp", "Mes pasado",       iniMes(mas(iniMes(A),-1)), mas(iniMes(A),-1)],
+  ["anio", "Este año",         F_MIN, A],
+].map(([id,nom,d,h])=>({id, nom, d:maxS(d,F_MIN), h:minS(h,F_MAX), ok: h>=F_MIN && d<=F_MAX}));
+
+// ---------- selector de rango ----------
+const ICO_CAL = `<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="3" width="12" height="11" rx="2"
+  fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3"
+  stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>`;
+const ICO_CHEV = `<svg class="rch" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 L11 8 L6 12.5"
+  fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+let rangoAbierto = null;
+document.addEventListener("pointerdown", ev=>{
+  if(rangoAbierto && !rangoAbierto.el.contains(ev.target)) rangoAbierto.cerrar();
+});
+document.addEventListener("keydown", ev=>{
+  if(ev.key==="Escape" && rangoAbierto){ const r=rangoAbierto; r.cerrar(); r.btn.focus(); }
+});
+
+// Como en Meta: rangos rapidos a la izquierda, calendario a la derecha, y nada
+// cambia hasta pulsar "Actualizar". Primer clic = inicio (o ese dia solo), segundo clic = fin.
+// Hay un selector en cada seccion (para no subir a cambiar la fecha) pero todos
+// comparten el mismo rango "st": cambiar uno cambia el informe entero.
+function crearRango(el, st, alCambiar){
+  let tmp=null, hover=null, vista=null;
+  el.className="rango";
+  el.innerHTML = `<button type="button" class="rbtn" aria-haspopup="dialog" aria-expanded="false">
+      ${ICO_CAL}<span class="rtx"></span>${ICO_CHEV}</button>
+    <div class="rpop" role="dialog" aria-label="Elegir rango de fechas" hidden></div>`;
+  const btn=el.querySelector(".rbtn"), pop=el.querySelector(".rpop");
+  const presetDe = (d,h) => PRESETS.find(p=>p.ok && p.d===d && p.h===h);
+  const angosto = () => matchMedia("(max-width:640px)").matches;
+
+  function etiqueta(){
+    const p=presetDe(st.d,st.h);
+    btn.querySelector(".rtx").innerHTML =
+      `<span class="rpn">${p ? p.nom : "Personalizado"}</span><span class="rfx">${fmtRango(st.d,st.h)}</span>`;
+  }
+  function abrir(){
+    if(rangoAbierto && rangoAbierto!==api) rangoAbierto.cerrar();
+    tmp={d:st.d, h:st.h}; hover=null;
+    verFin(st.h);
+    pop.hidden=false; btn.setAttribute("aria-expanded","true"); rangoAbierto=api;
+    pintar();
+  }
+  function cerrar(){
+    pop.hidden=true; btn.setAttribute("aria-expanded","false");
+    if(rangoAbierto===api) rangoAbierto=null;
+  }
+  // deja el mes del final a la vista (a la derecha si caben dos meses)
+  function verFin(h){
+    vista = angosto() ? iniMes(h) : iniMes(mas(iniMes(h),-1));
+    if(vista<iniMes(F_MIN)) vista=iniMes(F_MIN);
+  }
+  function actual(){
+    if(!tmp) return [null,null];
+    if(tmp.h) return [tmp.d,tmp.h];
+    if(hover) return hover<tmp.d ? [hover,tmp.d] : [tmp.d,hover];
+    return [tmp.d,tmp.d];
+  }
+  function mesGrid(ini){
+    const m=+ini.slice(5,7), fin=finMes(ini), hueco=(aD(ini).getUTCDay()+6)%7;
+    let h=`<div class="rmes"><div class="rmt">${MES[m]} ${ini.slice(0,4)}</div><div class="rgrid">`
+      + ["L","M","M","J","V","S","D"].map(x=>`<span class="rdw" aria-hidden="true">${x}</span>`).join("")
+      + `<span></span>`.repeat(hueco);
+    for(let s=ini; s<=fin; s=mas(s,1)){
+      const off = s<F_MIN || s>F_MAX;
+      h+=`<button type="button" class="rd" data-s="${s}" ${off?"disabled":""}
+        aria-label="${larga(s)}">${+s.slice(8)}</button>`;
+    }
+    return h+`</div></div>`;
+  }
+  // solo cambia clases: re-pintar el calendario en cada hover lo haria parpadear
+  function marcar(){
+    const [a,b]=actual();
+    pop.querySelectorAll(".rd").forEach(x=>{
+      const s=x.dataset.s, dentro=!!a && s>=a && s<=b;
+      x.classList.toggle("in", dentro);
+      x.classList.toggle("ini", s===a);
+      x.classList.toggle("fin", s===b);
+      x.setAttribute("aria-pressed", dentro);
+    });
+    const p = tmp.h && presetDe(tmp.d,tmp.h);
+    pop.querySelectorAll(".rpb").forEach(x=>x.setAttribute("aria-pressed", !!p && x.dataset.p===p.id));
+    // un solo clic ya sirve: es ese dia. Un segundo clic lo convierte en rango.
+    pop.querySelector(".rsel").textContent = tmp.h
+      ? `${fmtRango(tmp.d,tmp.h)} · ${diasEntre(tmp.d,tmp.h)+1} día${tmp.d===tmp.h?"":"s"}`
+      : `${fmtRango(tmp.d,tmp.d)} · 1 día (o elige el día final)`;
+  }
+  function pintar(){
+    const v2=iniMes(mas(vista,32)), tope=iniMes(F_MAX);
+    pop.innerHTML =
+      `<div class="rpres" role="group" aria-label="Rangos rápidos">`
+      + PRESETS.map(p=>`<button type="button" class="rpb" data-p="${p.id}" ${p.ok?"":"disabled"}>${p.nom}</button>`).join("")
+      + `</div>
+      <div class="rcal">
+        <button type="button" class="rnav prev" aria-label="Mes anterior" ${vista<=iniMes(F_MIN)?"disabled":""}>‹</button>
+        <button type="button" class="rnav next" aria-label="Mes siguiente" ${(angosto()?vista:v2)>=tope?"disabled":""}>›</button>
+        <div class="rmeses">${mesGrid(vista)}${mesGrid(v2)}</div>
+      </div>
+      <div class="rfoot"><span class="rsel"></span><span class="racts">
+        <button type="button" class="fbtn" data-a="no">Cancelar</button>
+        <button type="button" class="fbtn desc" data-a="si">Actualizar</button></span></div>`;
+    marcar();
+    pop.querySelectorAll(".rpb").forEach(b=>b.onclick=()=>{
+      const p=PRESETS.find(x=>x.id===b.dataset.p);
+      tmp={d:p.d, h:p.h}; hover=null; verFin(p.h); pintar();
+    });
+    pop.querySelector(".prev").onclick=()=>{ vista=iniMes(mas(vista,-1)); pintar(); };
+    pop.querySelector(".next").onclick=()=>{ vista=iniMes(mas(vista,32)); pintar(); };
+    pop.querySelectorAll(".rd:not(:disabled)").forEach(b=>{
+      const s=b.dataset.s;
+      b.onclick=()=>{
+        if(tmp.h) tmp={d:s, h:null};
+        else tmp = s<tmp.d ? {d:s, h:tmp.d} : {d:tmp.d, h:s};
+        hover=null; marcar();
+      };
+      b.onpointerenter=()=>{ if(!tmp.h){ hover=s; marcar(); } };
+    });
+    pop.querySelector("[data-a=no]").onclick=()=>{ cerrar(); btn.focus(); };
+    pop.querySelector("[data-a=si]").onclick=()=>{
+      st.d=tmp.d; st.h=tmp.h||tmp.d; cerrar(); btn.focus(); alCambiar();
+    };
+  }
+
+  btn.onclick = () => pop.hidden ? abrir() : cerrar();
+  const api = { el, btn, cerrar, etiqueta };
+  etiqueta();
+  return api;
+}
+
+// mismo numero de dias, justo antes del rango
+function periodoAnterior(rg){
+  const n=diasEntre(rg.d,rg.h)+1;
+  return {d:mas(rg.d,-n), h:mas(rg.d,-1)};
+}
+
+// subirBueno=false para costos (subir es malo); true para leads (subir es bueno)
+function deltaHtml(act, ant, subirBueno=false){
+  if(act==null||ant==null||ant===0) return '<span class="delta flat">—</span>';
+  const d=act/ant-1;
+  if(Math.abs(d)<0.02) return '<span class="delta flat">=</span>';
+  const sube=d>0, malo = subirBueno ? !sube : sube;
+  return `<span class="delta ${malo?"up":"down"}">${sube?"▲":"▼"} ${(Math.abs(d)*100).toFixed(0)}%</span>`;
+}
+
+// ---------- 1 · tabla sociedades > zonas ----------
+// Un solo rango para todo el informe, con un selector en cada seccion.
+const R1 = (p=>({d:p.d, h:p.h}))(PRESETS.find(p=>p.id==="mes" && p.ok) || PRESETS.find(p=>p.id==="anio"));
+const R2 = R1, R3 = R1;
+const SELECTORES = [...document.querySelectorAll("[data-rango]")].map(el=>
+  crearRango(el, R1, ()=>{ SELECTORES.forEach(s=>s.etiqueta()); abiertas.clear(); render(); }));
+const abiertas = new Set();          // sociedades desplegadas
+let tipoSel = null;                  // pestaña activa: Call / Sala
+let orden = "nombre";                // "nombre" = fijo · "cpl" = del mas barato al mas caro
+let vista = "resultados";            // "resultados" | "entrega"
+
+function renderTabla(){
+  const porCpl = SC ? (a,b)=>(b.c??0)-(a.c??0) : (a,b)=>(a.c??Infinity)-(b.c??Infinity);
+  const val = a => SC ? (a ? a.l : null) : cplDe(a);
+  const cmpSoc =(a,b)=> orden==="cpl" ? porCpl(a,b) : a.nom.localeCompare(b.nom,"es");
+  const cmpZona=(a,b)=> orden==="cpl" ? porCpl(a,b)
+                      : D.zonas[a.z].localeCompare(D.zonas[b.z],"es");
+  const filas=enRango(R1), pa=periodoAnterior(R1);
+  const filasAnt = pa.h>=F_MIN ? enRango(pa) : [];
+
+  // pestañas: tipos con leads en el rango
+  const porTipo=sumar(filas, r=>r.t);
+  const disp=[...porTipo].filter(([,a])=>a.l>0).map(([t])=>t)
+    .sort((a,b)=>D.tipos[a].localeCompare(D.tipos[b],"es"));
+  if(!disp.includes(tipoSel)) tipoSel = disp[0] ?? null;
+  pintarTabs(disp, porTipo);
+  const ayuda={"Call":"Leads que entran al call center.",
+               "Sala":"Leads que llegan a la sala de ventas."};
+  document.getElementById("tabHelp").textContent = ayuda[D.tipos[tipoSel]] ?? "";
+  if(tipoSel==null){
+    document.querySelector("#tbl thead").innerHTML="";
+    document.querySelector("#tbl tbody").innerHTML =
+      `<tr><td colspan="8" class="l" style="color:var(--ink-3);padding:22px 12px">Sin leads en estas fechas.</td></tr>`;
+    return;
+  }
+
+  const kZ=r=>r.e+"|"+r.z+"|"+r.ca;
+  const deTipo=f=>f.filter(r=>r.t===tipoSel);
+  const socA=sumar(deTipo(filas), r=>r.e),    zonA=sumar(deTipo(filas), kZ);
+  const antS=sumar(deTipo(filasAnt), r=>r.e), antZ=sumar(deTipo(filasAnt), kZ);
+
+  const socs=[...socA].filter(([,a])=>a.l>0).map(([e,a])=>({
+      e, nom:D.empresas[e], l:a.l, c:val(a), m:metDe(a), cp:val(antS.get(e)),
+      zonas:[...zonA].filter(([k,z])=>+k.split("|")[0]===e && z.l>0).map(([k,z])=>{
+        const [,zz,ca]=k.split("|").map(Number);
+        return {z:zz, ca, l:z.l, c:val(z), m:metDe(z), cp:val(antZ.get(k))};
+      }).sort(cmpZona)
+    })).sort(cmpSoc);
+
+  // Escala al percentil 90, no al maximo: una sola zona carisima dejaba todas las
+  // demas barras por debajo del 25% del ancho y las volvia ilegibles.
+  const vals=socs.flatMap(s=>[s.c, ...s.zonas.map(z=>z.c)]).filter(v=>v>0).sort((a,b)=>a-b);
+  const tope=vals.length ? vals[Math.min(vals.length-1, Math.floor(vals.length*0.9))] : 1;
+  const col=colTipo(D.tipos[tipoSel]);
+  const barra=c=>{
+    if(!c) return `<td class="bar"></td>`;
+    const w=Math.min(100, Math.max(3, c/tope*100));
+    return `<td class="bar"><i class="${c>tope?"over":""}" style="width:${w}%;background:${col}"></i></td>`;
+  };
+
+  const ENT = vista==="entrega";
+  const titAnt = `Contra ${fmtRango(pa.d,pa.h)}`;
+  document.querySelector("#tbl thead").innerHTML = ENT
+    ? `<tr><th class="l">Sociedad · zona</th><th class="l">Canal</th>
+        <th class="num">Impresiones</th><th class="num">Alcance</th><th class="num">Frec.</th>
+        <th class="num">Clics</th><th class="num">CTR</th><th class="num">Leads</th></tr>`
+    : SC ? `<tr><th class="l">Sociedad · zona</th><th class="l">Canal</th><th class="l"></th>
+        <th class="num">Leads</th><th class="num" title="${titAnt}">vs. período ant.</th></tr>`
+    : `<tr><th class="l">Sociedad · zona</th><th class="l">Canal</th><th class="l">Costo por lead</th>
+        <th class="num">CPL</th><th class="num">Leads</th><th class="num" title="${titAnt}">vs. período ant.</th></tr>`;
+
+  // m = [impresiones, alcance, clics, frecuencia*100, ctr*100]
+  const celdasEnt = (m, aprox) => {
+    if(!m) return `<td class="num">—</td>`.repeat(6);
+    const ap = aprox ? '<span class="aprox" title="suma de las zonas: puede contar dos veces a la misma persona">~</span>' : "";
+    return `<td class="num">${miles(m[0])}</td>`
+         + `<td class="num">${ap}${miles(m[1])}</td>`
+         + `<td class="num">${ap}${(m[3]/100).toLocaleString("es-CO",{minimumFractionDigits:2,maximumFractionDigits:2})}</td>`
+         + `<td class="num">${miles(m[2])}</td>`
+         + `<td class="num">${ap}${(m[4]/100).toLocaleString("es-CO",{minimumFractionDigits:2,maximumFractionDigits:2})}%</td>`;
+  };
+
+  const html=socs.map(s=>{
+    const ab=abiertas.has(s.e), n=s.zonas.length;
+    let out=`
+      <tr class="soc${ab?" open":""}" data-soc="${s.e}">
+        <td class="l">
+          <button type="button" class="dis" aria-expanded="${ab}">
+            <svg class="chev" viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M6 3.5 L11 8 L6 12.5" fill="none" stroke="currentColor" stroke-width="2.6"
+                stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>${s.nom}</span>
+            <span class="cnt">${n} zona${n===1?"":"s"}</span>
+          </button>
+        </td>
+        <td class="l">${canalesDe(s)}</td>
+        ${ENT ? celdasEnt(s.m, s.zonas.length>1) + `<td class="num">${miles(s.l)}</td>`
+              : barra(s.c) + (SC ? "" : `<td class="num">${s.c?pesos(s.c):"—"}</td>`)
+                           + `<td class="num">${miles(s.l)}</td>`
+                           + `<td class="num">${deltaHtml(s.c,s.cp,SC)}</td>`}
+      </tr>`;
+    if(ab) s.zonas.forEach(z=>{ out+=`
+      <tr class="zona">
+        <td class="l zname">${D.zonas[z.z]}</td>
+        <td class="l">${chipCanal(D.canales[z.ca])}</td>
+        ${ENT ? celdasEnt(z.m, false) + `<td class="num">${miles(z.l)}</td>`
+              : barra(z.c) + (SC ? "" : `<td class="num">${z.c?pesos(z.c):"—"}</td>`)
+                           + `<td class="num">${miles(z.l)}</td>`
+                           + `<td class="num">${deltaHtml(z.c,z.cp,SC)}</td>`}
+      </tr>`; });
+    return out;
+  }).join("");
+
+  document.querySelector("#tbl tbody").innerHTML = html ||
+    `<tr><td colspan="8" class="l" style="color:var(--ink-3);padding:22px 12px">Sin leads de ${D.tipos[tipoSel]} en estas fechas.</td></tr>`;
+
+  document.querySelectorAll("#tbl .soc .dis").forEach(b=>{
+    b.onclick=()=>{
+      const e=+b.closest("tr").dataset.soc;
+      abiertas.has(e) ? abiertas.delete(e) : abiertas.add(e);
+      renderTabla();
+    };
+  });
+  const ta=document.getElementById("toggleAll");
+  const todas=socs.length>0 && socs.every(s=>abiertas.has(s.e));
+  ta.textContent = todas ? "Cerrar todas" : "Abrir todas";
+  ta.setAttribute("aria-pressed", todas);
+  ta.onclick=()=>{ todas ? abiertas.clear() : socs.forEach(s=>abiertas.add(s.e)); renderTabla(); };
+
+  const on=document.getElementById("ordNom"), oc=document.getElementById("ordCpl");
+  on.setAttribute("aria-pressed", orden==="nombre");
+  oc.setAttribute("aria-pressed", orden==="cpl");
+  on.onclick=()=>{ orden="nombre"; renderTabla(); };
+  oc.onclick=()=>{ orden="cpl";    renderTabla(); };
+  const vr=document.getElementById("vRes"), ve=document.getElementById("vEnt");
+  vr.setAttribute("aria-pressed", vista==="resultados");
+  ve.setAttribute("aria-pressed", vista==="entrega");
+  vr.onclick=()=>{ vista="resultados"; renderTabla(); };
+  ve.onclick=()=>{ vista="entrega";    renderTabla(); };
+  const bc2=document.getElementById("btnCsv");
+  bc2.onclick=()=>exportar(bc2);
+}
+
+function pintarTabs(disp, porTipo){
+  const box=document.getElementById("tabs"); box.innerHTML="";
+  disp.forEach(t=>{
+    const nom=D.tipos[t];
+    const b=document.createElement("button");
+    b.type="button"; b.className="tab"; b.style.setProperty("--c", colTipo(nom));
+    b.setAttribute("aria-pressed", t===tipoSel);
+    b.innerHTML=`${nom} <span class="tabn">${miles(porTipo.get(t).l)}</span>`;
+    b.onclick=()=>{ tipoSel=t; abiertas.clear(); renderTabla(); renderAnio(); };
+    box.appendChild(b);
+  });
+}
+
+
+// Con 2 sociedades salen hasta 4 series y solo hay 2 colores validados.
+// Codificacion compuesta: el COLOR sigue siendo el tipo (Call teal / Sala ambar,
+// igual que en todo el informe) y la SOCIEDAD se distingue por el trazo —
+// la primera va solida, la segunda punteada (o rayada, en las barras).
+function seriesComp(sel, fuente){
+  const out=[];
+  sel.forEach((e,idx)=>{
+    const porTipo={};
+    fuente(e, porTipo);
+    Object.keys(porTipo).map(Number)
+      .sort((a,b)=>D.tipos[a].localeCompare(D.tipos[b],"es"))
+      .forEach(tp=>out.push({
+        e, t:tp, idx,
+        nom: sel.length>1 ? `${D.empresas[e]} · ${D.tipos[tp]}` : D.tipos[tp],
+        color: colorTipo(D.tipos[tp]),
+        dash: idx===1 ? "5 3" : null,
+        datos: porTipo[tp]
+      }));
+  });
+  return out;
+}
+
+// ---------- motor de líneas (1 o más series) ----------
+function dibujar(svg, tip, cats, catTxt, series, fmtY, W, H){
+  const L=62,R=76,T=18,B=32, iw=W-L-R, ih=H-T-B;
+  if(!cats.length || !series.length){
+    svg.innerHTML=`<text x="${W/2}" y="${H/2}" text-anchor="middle" class="axis-t">Sin datos en estas fechas</text>`;
+    return;
+  }
+  const maxV=Math.max(1,...series.flatMap(s=>s.vals.filter(v=>v!=null)));
+  const step=Math.pow(10,Math.floor(Math.log10(maxV)))/2 || 1;
+  const top=Math.ceil(maxV/step)*step || 1;
+  const x=i=>L+(cats.length>1?i/(cats.length-1):.5)*iw, y=v=>T+ih-(v/top)*ih;
+
+  let g="";
+  for(let k=0;k<=4;k++){ const v=top*k/4, yy=y(v);
+    g+=`<line class="gridline" x1="${L}" y1="${yy}" x2="${W-R}" y2="${yy}"/>`
+     + `<text class="axis-t" x="${L-9}" y="${yy+3.5}" text-anchor="end">${fmtY(v)}</text>`; }
+  const paso=Math.max(1,Math.ceil(cats.length/8));
+  cats.forEach((c,i)=>{ if(i===0||i===cats.length-1||i%paso===0)
+    g+=`<text class="axis-t" x="${x(i)}" y="${H-B+19}" text-anchor="middle">${c}</text>`; });
+
+  // con muchos dias los puntos se amontonan: solo la linea
+  const puntos = cats.length<=62;
+  let marcas="", etiquetas="";
+  series.forEach(s=>{
+    const pts=s.vals.map((v,i)=>v==null?null:[x(i),y(v)]).filter(Boolean);
+    if(!pts.length) return;
+    const d=pts.map((p,i)=>(i?"L":"M")+p[0].toFixed(1)+" "+p[1].toFixed(1)).join(" ");
+    marcas+=`<path d="${d}" fill="none" stroke="${s.color}" stroke-width="2"
+      ${s.dash?`stroke-dasharray="${s.dash}"`:""} stroke-linejoin="round" stroke-linecap="round"/>`;
+    if(puntos) marcas+=pts.map(p=>`<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3"
+      fill="${s.color}" stroke="${css("--surface")}" stroke-width="1.5"/>`).join("");
+    if(series.length<=2){
+      const u=pts[pts.length-1];
+      etiquetas+=`<text x="${(u[0]+10).toFixed(1)}" y="${(u[1]+4).toFixed(1)}"
+        style="fill:${s.color};font-family:var(--font-m);font-size:11.5px;font-weight:600">${s.nom}</text>`;
+    }
+  });
+
+  svg.innerHTML=g+marcas+etiquetas
+    +`<line id="cross" x1="0" y1="${T}" x2="0" y2="${T+ih}" stroke="${css("--ink-3")}"
+        stroke-width="1" stroke-dasharray="3 3" opacity="0"/>
+      <rect id="hit" x="${L}" y="${T}" width="${iw}" height="${ih}" fill="transparent"/>`;
+
+  const hit=svg.querySelector("#hit"), cross=svg.querySelector("#cross");
+  hit.addEventListener("pointermove", ev=>{
+    const r=svg.getBoundingClientRect(), px=(ev.clientX-r.left)/r.width*W;
+    let bi=0,bd=1e9; cats.forEach((_,i)=>{ const dd=Math.abs(x(i)-px); if(dd<bd){bd=dd;bi=i;} });
+    cross.setAttribute("x1",x(bi)); cross.setAttribute("x2",x(bi)); cross.setAttribute("opacity","1");
+    tip.innerHTML=`<b>${catTxt(cats[bi],bi)}</b>`+series.map(s=>
+      `<div class="r"><span><i style="background:${s.color}"></i>${s.nom}</span>
+       <span>${s.vals[bi]==null?"—":fmtY(s.vals[bi])}</span></div>`).join("");
+    tip.style.opacity="1";
+    const tw=tip.offsetWidth||150, px2=x(bi)/W*r.width;
+    tip.style.left=Math.min(Math.max(px2-tw/2,4), r.width-tw-4)+"px";
+    tip.style.top=Math.max(4, T/H*r.height - 6)+"px";
+  });
+  hit.addEventListener("pointerleave",()=>{ tip.style.opacity="0"; cross.setAttribute("opacity","0"); });
+}
+
+const colTipo = nom => nom==="Call" ? "var(--accent)" : nom==="Sala" ? "var(--serie-2)" : "var(--ink-3)";
+// Formulario = formulario instantaneo de Meta · WhatsApp = conversacion iniciada.
+// Se distingue por el nombre de la CAMPAÑA: hay adsets META_PF_* que cuelgan de
+// campañas de WhatsApp (verificado contra Meta: destination_type=WHATSAPP).
+const chipCanal = n =>
+  `<span class="chip ${n==="WhatsApp"?"wa":"form"}">${n}</span>`;
+const canalesDe = s =>
+  [...new Set(s.zonas.map(z=>D.canales[z.ca]))].sort().map(chipCanal).join(" ");
+const colorTipo = nom => nom==="Call" ? css("--accent") : nom==="Sala" ? css("--serie-2") : css("--ink-3");
+
+function pintarLeyenda(el, series, extra){
+  el.innerHTML = series.length
+    ? series.map((s,i)=>`<span><i class="${s.dash?"punt":""}" style="background:${s.color}${
+        s.dash?`;--c:${s.color}`:""}"></i>${s.nom}${extra?extra(s,i):""}</span>`).join("")
+    : "";
+}
+
+// ---------- sociedades y zonas de una grafica ----------
+// Las dos graficas comparten sociedades y zona: elegir en una cambia la otra.
+// g = {sel:[sociedades], zona:null|indice}; dispara pintar() al cambiar.
+const MAX_COMP = 2;
+function pintarFiltros(g, filas, idSocs, idZona, pintar){
+  const porSoc=sumar(filas, r=>r.e);
+  const dis=[...porSoc].filter(([,a])=>a.l>0).sort((a,b)=>b[1].l-a[1].l).map(([e])=>e);
+  g.sel = g.sel.filter(e=>dis.includes(e));
+  if(!g.sel.length && dis.length) g.sel=[dis[0]];
+  const box=document.getElementById(idSocs); box.innerHTML="";
+  dis.slice().sort((a,b)=>D.empresas[a].localeCompare(D.empresas[b],"es")).forEach(e=>{
+    const b=document.createElement("button");
+    b.className="fbtn"; b.type="button"; b.textContent=D.empresas[e];
+    b.setAttribute("aria-pressed", g.sel.includes(e));
+    b.onclick=()=>{
+      const i=g.sel.indexOf(e);
+      if(i>=0){ if(g.sel.length>1) g.sel.splice(i,1); }         // no dejar ninguna
+      else if(g.sel.length<MAX_COMP) g.sel.push(e);
+      else g.sel=[g.sel[1], e];                                  // entra la nueva, sale la vieja
+      pintar();
+    };
+    box.appendChild(b);
+  });
+  // Las zonas dependen de las sociedades elegidas. Si la que estaba seleccionada
+  // no existe en la nueva seleccion, se vuelve a "todas" en vez de dejar la
+  // grafica vacia sin explicacion.
+  const zonas=[...new Set(filas.filter(r=>r.l>0 && g.sel.includes(r.e)).map(r=>r.z))]
+    .sort((a,b)=>D.zonas[a].localeCompare(D.zonas[b],"es"));
+  if(g.zona!=null && !zonas.includes(g.zona)) g.zona=null;
+  const s=document.getElementById(idZona);
+  s.innerHTML=`<option value="">Todas las zonas</option>`
+    + zonas.map(z=>`<option value="${z}"${z===g.zona?" selected":""}>${D.zonas[z]}</option>`).join("");
+  s.onchange=()=>{ g.zona = s.value==="" ? null : +s.value; pintar(); };
+}
+
+// ---------- 2 · leads por día ----------
+const G2 = {sel:[], zona:null};
+
+function renderDia(){
+  const filas=enRango(R2);
+  pintarFiltros(G2, filas, "socs", "selZona1", renderGraficas);
+  const series=seriesComp(G2.sel, (e,acc)=>{
+    filas.forEach(r=>{
+      if(r.e!==e || !r.l) return;
+      if(G2.zona!=null && r.z!==G2.zona) return;
+      (acc[r.t]=acc[r.t]||{})[r.f]=(acc[r.t][r.f]||0)+r.l;
+    });
+  });
+  // todos los dias del rango: un dia sin leads es un cero, no un hueco
+  const dias=[]; for(let s=R2.d; s<=R2.h; s=mas(s,1)) dias.push(s);
+  const S=series.map(s=>({...s, vals:dias.map(f=>s.datos[f]??0),
+    tot:Object.values(s.datos).reduce((a,b)=>a+b,0)}));
+  pintarLeyenda(document.getElementById("legDia"), S,
+    s=>` · <span class="mono">${miles(s.tot)} leads</span>`);
+  dibujar(document.getElementById("svgDia"), document.getElementById("tipDia"),
+    dias.map(corta), (c,i)=>larga(dias[i]), S, miles, 900, 270);
+}
+
+
+// ---------- 3 · mes a mes por sociedad ----------
+const G3 = G2;
+function renderGraficas(){ renderDia(); renderMini(); }
+let anioVista = "leads";     // "leads" | "cpl"
+
+// meses que toca el rango ("AAAA-MM"); los de las puntas pueden ir incompletos
+function mesesDe(rg){
+  const out=[]; for(let s=iniMes(rg.d); s<=rg.h; s=iniMes(mas(s,32))) out.push(s.slice(0,7));
+  return out;
+}
+const variosAnios = ms => ms[0].slice(0,4)!==ms[ms.length-1].slice(0,4);
+const mesCorto = (ym, ms) => MES3[+ym.slice(5)] + (variosAnios(ms) ? " "+ym.slice(2,4) : "");
+const mesLargo = ym => `${MES[+ym.slice(5)]} ${ym.slice(0,4)}`;
+
+// Barras agrupadas por mes. Con 2 sociedades, la segunda va rayada en vez de
+// llena: mismo color (el tipo), distinta textura (la sociedad).
+function renderMini(){
+  const svg=document.getElementById("svgAnio"), tip=document.getElementById("tipAnio");
+  const W=900,H=300, L=66,R=16,T=18,B=38, iw=W-L-R, ih=H-T-B;
+  const filas=enRango(R3), MS=mesesDe(R3);
+  pintarFiltros(G3, filas, "socs2", "selZona2", renderGraficas);
+  if(!G3.sel.length){
+    pintarLeyenda(document.getElementById("legAnio"), []);
+    svg.innerHTML=`<text x="${W/2}" y="${H/2}" text-anchor="middle" class="axis-t">Sin datos en estas fechas</text>`;
+    return;
+  }
+
+  // el CPL se pondera por leads, nunca se promedia: se guarda el costo de cada mes
+  const series=seriesComp(G3.sel, (e,acc)=>{
+    const m=sumar(filas.filter(r=>r.e===e && (G3.zona==null || r.z===G3.zona)),
+                  r=>r.t+"|"+r.f.slice(0,7));
+    m.forEach((a,k)=>{ if(a.l<=0) return;
+      const [tp,ym]=k.split("|");
+      (acc[tp]=acc[tp]||{})[ym]={l:a.l, c:cplDe(a), cost:a.cost};
+    });
+  }).map(s=>({...s, vals:MS.map(ym=>{ const x=s.datos[ym];
+    return x? (anioVista==="leads"? x.l : x.c) : null; })}));
+
+  const f = v => v==null? "—" : (anioVista==="leads"? miles(v) : pesos(v));
+  pintarLeyenda(document.getElementById("legAnio"), series, s=>{
+    const con=Object.values(s.datos);
+    const tl=con.reduce((a,x)=>a+x.l,0), tc=con.reduce((a,x)=>a+x.cost,0);
+    const tot = anioVista==="leads" ? tl : (tl&&tc? Math.round(tc/tl):null);
+    return ` · <span class="mono">${f(tot)} en total</span>`;
+  });
+
+  const todos=series.flatMap(s=>s.vals).filter(v=>v!=null && v>0);
+  if(!todos.length){ svg.innerHTML=`<text x="${W/2}" y="${H/2}" text-anchor="middle" class="axis-t">Sin datos</text>`; return; }
+  const maxV=Math.max(...todos);
+  const step=Math.pow(10,Math.floor(Math.log10(maxV)))/2 || 1;
+  const top=Math.ceil(maxV/step)*step || 1;
+  const y=v=>T+ih-(v/top)*ih;
+
+  const paso=iw/MS.length;
+  const gAncho=Math.min(paso*0.7, 86);
+  const bAncho=Math.max(4, (gAncho-(series.length-1)*2)/series.length);
+  const gx=i=>L+paso*i+(paso-gAncho)/2;
+
+  let g="";
+  for(let k=0;k<=4;k++){ const v=top*k/4, yy=y(v);
+    g+=`<line class="gridline" x1="${L}" y1="${yy}" x2="${W-R}" y2="${yy}"/>`
+     + `<text class="axis-t" x="${L-9}" y="${yy+3.5}" text-anchor="end">${f(v)}</text>`; }
+  MS.forEach((ym,i)=>{ g+=`<text class="axis-t" x="${(gx(i)+gAncho/2).toFixed(1)}" y="${H-B+19}"
+      text-anchor="middle">${mesCorto(ym,MS)}</text>`; });
+
+  // una trama por color, para la sociedad que va rayada
+  const tramas=[...new Set(series.filter(s=>s.dash).map(s=>s.color))]
+    .map((c,i)=>`<pattern id="tr${i}" width="6" height="6" patternUnits="userSpaceOnUse"
+        patternTransform="rotate(45)">
+        <rect width="6" height="6" fill="${c}" opacity=".30"/>
+        <rect width="3" height="6" fill="${c}"/></pattern>`).join("");
+  const trIdx=c=>[...new Set(series.filter(s=>s.dash).map(s=>s.color))].indexOf(c);
+
+  let barras="";
+  MS.forEach((ym,i)=>{
+    series.forEach((s,j)=>{
+      const v=s.vals[i]; if(v==null||v<=0) return;
+      const x=gx(i)+j*(bAncho+2), h=Math.max(2, T+ih-y(v));
+      const relleno = s.dash ? `url(#tr${trIdx(s.color)})` : s.color;
+      barras+=`<rect class="bara" x="${x.toFixed(1)}" y="${y(v).toFixed(1)}"
+        width="${bAncho.toFixed(1)}" height="${h.toFixed(1)}" rx="3" fill="${relleno}"
+        ${s.dash?`stroke="${s.color}" stroke-width="1"`:""}
+        data-i="${i}"><title>${mesLargo(ym)} · ${s.nom}: ${f(v)}</title></rect>`;
+    });
+  });
+  svg.innerHTML=`<defs>${tramas}</defs>`+g+barras
+    +`<line x1="${L}" y1="${T+ih}" x2="${W-R}" y2="${T+ih}" stroke="var(--line)" stroke-width="1"/>`;
+
+  svg.querySelectorAll(".bara").forEach(b=>{
+    b.addEventListener("pointerenter",()=>{
+      const i=+b.dataset.i;
+      tip.innerHTML=`<b>${mesLargo(MS[i])}</b>`+series.map(s=>
+        `<div class="r"><span><i class="${s.dash?"punt":""}" style="background:${s.color}"></i>${s.nom}</span>
+         <span>${f(s.vals[i])}</span></div>`).join("");
+      tip.style.opacity="1";
+      const r=svg.getBoundingClientRect(), tw=tip.offsetWidth||150;
+      const px=(+b.getAttribute("x")+ +b.getAttribute("width")/2)/W*r.width;
+      tip.style.left=Math.min(Math.max(px-tw/2,4), r.width-tw-4)+"px";
+      tip.style.top=Math.max(4, (+b.getAttribute("y"))/H*r.height - tip.offsetHeight - 10)+"px";
+    });
+    b.addEventListener("pointerleave",()=>tip.style.opacity="0");
+  });
+}
+
+function renderAnio(){
+  const tp = tipoSel==null ? null : D.tipos[tipoSel];
+  document.getElementById("anioSub").textContent = tp
+    ? (SC ? "Leads de Call mes a mes de la sociedad elegida. Toca una segunda para comparar."
+          : `Mes a mes de la sociedad elegida, separando Call y Sala. Toca una segunda para comparar. La tabla muestra ${tp}, según la pestaña de arriba.`)
+    : "Sin datos en estas fechas.";
+  const th=document.querySelector("#tblAnio thead"), tb=document.querySelector("#tblAnio tbody");
+  if(tipoSel==null){ th.innerHTML=""; tb.innerHTML=""; return; }
+
+  const MS=mesesDe(R3);
+  // [sociedad][AAAA-MM] = {l, c, cost}
+  const M={};
+  sumar(enRango(R3).filter(r=>r.t===tipoSel), r=>r.e+"|"+r.f.slice(0,7)).forEach((a,k)=>{
+    if(a.l<=0) return;
+    const [e,ym]=k.split("|");
+    (M[e]=M[e]||{})[ym]={l:a.l, c:cplDe(a), cost:a.cost};
+  });
+  const socs=Object.keys(M).map(Number)
+    .sort((a,b)=>D.empresas[a].localeCompare(D.empresas[b],"es"));
+  if(!socs.length){ th.innerHTML=""; tb.innerHTML=`<tr><td class="l" style="color:var(--ink-3);padding:22px 12px">Sin leads de ${tp} en estas fechas.</td></tr>`; return; }
+
+  th.innerHTML = `<tr><th class="l">Sociedad</th>`
+    + MS.map(ym=>`<th class="num">${mesCorto(ym,MS)}</th>`).join("")
+    + `<th class="num tot">Total</th></tr>`;
+
+  // escala del heatmap: percentil 90 para que un pico no aplaste el resto
+  const vals=socs.flatMap(e=>MS.map(ym=>M[e][ym]).filter(Boolean)
+    .map(x=>anioVista==="leads"?x.l:x.c)).filter(v=>v>0).sort((a,b)=>a-b);
+  const tope=vals.length? vals[Math.min(vals.length-1,Math.floor(vals.length*0.9))] : 1;
+  const col=colTipo(tp);
+  const celda=v=>{
+    if(v==null) return `<td class="num vac">·</td>`;
+    const a=Math.min(1, v/tope)*0.42;   // el texto manda; el fondo solo insinua
+    return `<td class="num heat" style="background:color-mix(in srgb, ${col} ${(a*100).toFixed(0)}%, transparent)">`
+         + (anioVista==="leads" ? miles(v) : pesos(v)) + `</td>`;
+  };
+
+  tb.innerHTML = socs.map(e=>{
+    const fila=MS.map(ym=>{
+      const x=M[e][ym]; if(!x) return null;
+      return anioVista==="leads" ? x.l : x.c;
+    });
+    // total: leads se suman; el CPL sale del costo total, nunca se promedia
+    const con=MS.map(ym=>M[e][ym]).filter(Boolean);
+    const tl=con.reduce((a,x)=>a+x.l,0), tc=con.reduce((a,x)=>a+x.cost,0);
+    const tot = anioVista==="leads" ? tl : (tl&&tc? Math.round(tc/tl) : null);
+    const act=con.length, meses=MS.length;
+    return `<tr><td class="l">${D.empresas[e]}`
+      + (act<meses? `<span class="cnt">${act}/${meses} meses</span>`:"")
+      + `</td>${fila.map(celda).join("")}`
+      + `<td class="num tot">${tot==null?"—":(anioVista==="leads"?miles(tot):pesos(tot))}</td></tr>`;
+  }).join("");
+
+  const bl=document.getElementById("anLeads"), bc=document.getElementById("anCpl");
+  bl.setAttribute("aria-pressed", anioVista==="leads");
+  bc.setAttribute("aria-pressed", anioVista==="cpl");
+  bl.onclick=()=>{ anioVista="leads"; renderAnio(); renderMini(); };
+  bc.onclick=()=>{ anioVista="cpl";   renderAnio(); renderMini(); };
+}
+
+
+// ---------- exportar a Excel ----------
+// Descarga lo que se ve en la tabla de arriba: las fechas elegidas ahi, dia por dia.
+// La libreria (~860 KB) se carga SOLO al pulsar el boton: quien nunca exporta
+// no paga ese peso. Si el CDN falla, se cae a CSV para no dejar al usuario sin
+// nada. El CSV lleva BOM y "sep=;" para que Excel en espanol lo abra bien.
+const XLSX_URL = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
+let xlsxPromesa = null;
+
+function cargarXlsx(){
+  if(window.XLSX) return Promise.resolve(window.XLSX);
+  if(xlsxPromesa) return xlsxPromesa;
+  xlsxPromesa = new Promise((ok, fallo)=>{
+    const s=document.createElement("script");
+    s.src=XLSX_URL;
+    s.onload=()=> window.XLSX ? ok(window.XLSX) : fallo(new Error("sin XLSX"));
+    s.onerror=()=> fallo(new Error("no cargo"));
+    document.head.appendChild(s);
+    setTimeout(()=>fallo(new Error("tardo demasiado")), 20000);
+  });
+  return xlsxPromesa;
+}
+
+const CAB0 = ["Fecha","Sociedad","Zona","Tipo","Canal","Leads","CPL",
+             "Impresiones","Alcance","Frecuencia","Clics enlace","CTR %"];
+const CAB = SC ? CAB0.filter(c=>c!=="CPL") : CAB0;
+
+function filasDatos(conFecha){
+  return enRango(R1).map(r=>{
+    const [imp,alc,clk,fre,ctr] = metDe(r);
+    const [y,m,d] = r.f.split("-").map(Number);
+    const f = [conFecha ? new Date(y,m-1,d) : r.f, D.empresas[r.e], D.zonas[r.z], D.tipos[r.t],
+            D.canales[r.ca], r.l, cplDe(r), imp, alc, fre/100, clk, ctr/100];
+    if(SC) f.splice(6,1);
+    return f;
+  });
+}
+
+function nombreArchivo(ext){ return `pauta-haku-${R1.d}_a_${R1.h}.${ext}`; }
+
+async function descargarExcel(){
+  const XLSX = await cargarXlsx();
+  const datos = filasDatos(true);
+  const ws = XLSX.utils.aoa_to_sheet([CAB, ...datos]);
+  const ANCHO = {Fecha:11, Sociedad:22, Zona:20, Tipo:7, Canal:12, Leads:8, CPL:10,
+                 Impresiones:12, Alcance:11, Frecuencia:11, "Clics enlace":12, "CTR %":8};
+  ws["!cols"] = CAB.map(c=>({wch:ANCHO[c]}));
+  ws["!autofilter"] = {ref: XLSX.utils.encode_range(
+    {s:{r:0,c:0}, e:{r:datos.length, c:CAB.length-1}})};
+  ws["!freeze"] = {xSplit:0, ySplit:1};
+  // numeros como numeros, con su formato: si van como texto no se pueden sumar
+  const FMT = {Fecha:"yyyy-mm-dd", Leads:"#,##0", CPL:'"$"#,##0', Impresiones:"#,##0", Alcance:"#,##0",
+               Frecuencia:"0.00", "Clics enlace":"#,##0", "CTR %":'0.00"%"'};
+  const fmt = Object.fromEntries(CAB.map((c,i)=>[i, FMT[c]]).filter(([,z])=>z));
+  datos.forEach((_,i)=>{
+    Object.entries(fmt).forEach(([c,z])=>{
+      const cel = ws[XLSX.utils.encode_cell({r:i+1, c:+c})];
+      if(cel && cel.t === "n") cel.z = z;
+    });
+  });
+
+  const leeme = XLSX.utils.aoa_to_sheet([
+    ["Informe de pauta — Haku"],
+    [],
+    ["Fechas", fmtRango(R1.d, R1.h)],
+    ["Datos hasta", D.hasta],
+    ["Fuente", SC ? "Meta Marketing API · campañas de Call" : "Meta Marketing API · campañas de captación (Call y Sala)"],
+    [],
+    ["Filas", "Una por día, sociedad, zona, tipo y canal."],
+    ["Tipo", "Call = lead que entra al call center · Sala = lead que llega a la sala de ventas"],
+    ["Canal", "Formulario = formulario instantáneo de Meta · WhatsApp = conversación iniciada"],
+    ...(SC ? [] : [["CPL", "Inversión del día dividida por sus leads. Vacío si ese día no hubo leads o no hubo inversión. Para el CPL de varios días no promedies esta columna: el informe web lo calcula bien."]]),
+    ["CTR %", "Clics únicos en el enlace sobre alcance, como lo calcula Meta."],
+    [],
+    ["OJO con el Alcance", "Son personas únicas por día. Al sumar varios días o varias zonas se cuenta dos veces a la misma persona: la suma queda por encima del alcance real."],
+    ["OJO con los últimos días", "Meta reajusta a qué día pertenece cada lead hasta 72 horas después, así que las cifras recientes pueden moverse."],
+  ]);
+  leeme["!cols"]=[{wch:22},{wch:96}];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Datos");
+  XLSX.utils.book_append_sheet(wb, leeme, "Léeme");
+  XLSX.writeFile(wb, nombreArchivo("xlsx"));
+}
+
+function descargarCsv(){
+  const esc = v => {
+    const s = String(v ?? "");
+    return /[";\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s;
+  };
+  const cuerpo = [CAB, ...filasDatos(false)].map(f=>f.map(esc).join(";")).join("\r\n");
+  const blob = new Blob(["﻿" + "sep=;\r\n" + cuerpo], {type:"text/csv;charset=utf-8;"});
+  const a = document.createElement("a"), url = URL.createObjectURL(blob);
+  a.href = url; a.download = nombreArchivo("csv");
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 1000);
+}
+
+async function exportar(btn){
+  const t0 = btn.textContent;
+  btn.textContent = "Preparando…"; btn.disabled = true;
+  try{
+    await descargarExcel();
+    btn.textContent = "Descargado ✓";
+  }catch(e){
+    descargarCsv();                       // sin librería, al menos va el CSV
+    btn.textContent = "Descargado (CSV)";
+  }finally{
+    btn.disabled = false;
+    setTimeout(()=>btn.textContent = t0, 2600);
+  }
+}
+
+function render(){
+  renderTabla(); renderDia(); renderAnio(); renderMini();
+}
+// Filtro por call. Lo llama la pagina de Solicitud de leads (que contiene este informe)
+// con los conjuntos de cada grupo como pares [sociedad, zona] en los nombres del informe.
+// Sin esa llamada (informe abierto suelto) no hay filtro.
+let grupoInf = null, GRUPOS_INF = {};
+window.ponerGrupos = (mapa, inicial) => {
+  const ei = new Map(D.empresas.map((n,i)=>[n,i])), zi = new Map(D.zonas.map((n,i)=>[n,i]));
+  GRUPOS_INF = Object.fromEntries(Object.entries(mapa).map(([g,pares])=>
+    [g, new Set(pares.filter(([e,z])=>ei.has(e) && zi.has(z)).map(([e,z])=>ei.get(e)+"|"+zi.get(z)))]));
+  if(inicial !== undefined && grupoInf === null) grupoInf = inicial;
+  if(grupoInf && !GRUPOS_INF[grupoInf]) grupoInf = null;
+  filtrarGrupo(grupoInf);
+};
+function filtrarGrupo(g){
+  grupoInf = g;
+  const k = g ? GRUPOS_INF[g] : null;
+  FILAS = k ? FILAS_TODAS.filter(r=>k.has(r.e+"|"+r.z)) : FILAS_TODAS;
+  const box = document.getElementById("gfilt"); box.hidden = false;
+  box.innerHTML = `<span class="soclbl">Ver</span>` + [null, ...Object.keys(GRUPOS_INF)].map(x=>
+    `<button type="button" class="fbtn" data-g="${x??""}" aria-pressed="${x===g}">${x ?? "Todos los calls"}</button>`).join("");
+  if(g) box.insertAdjacentHTML("beforeend", `<span class="hint" style="margin-left:6px">Lo que entrega Meta en las zonas de este call. Las zonas que piden dos calls aparecen completas en los dos.</span>`);
+  box.querySelectorAll("button").forEach(b=>b.onclick=()=>filtrarGrupo(b.dataset.g || null));
+  abiertas.clear(); G2.sel = [];
+  render();
+}
+if(SC){
+  document.querySelector("h1").textContent = "Leads de Call por sociedad";
+  document.querySelector(".sub").textContent = "Cuántos leads de Call entran en cada zona de cada sociedad. Los datos salen directo de Meta.";
+  document.querySelector("section.first .shead p").textContent =
+    "Toca una sociedad para ver sus zonas. La flecha compara los leads contra los mismos días justo antes de las fechas elegidas.";
+  document.querySelectorAll("section .shead p")[1].textContent = "Leads de Call que entraron cada día. Puedes elegir dos sociedades para compararlas.";
+  const oc = document.getElementById("ordCpl"); oc.textContent = "Más leads";
+  document.getElementById("anCpl").closest(".tbar").hidden = true;
+}
+const [Y,M,Dd]=D.hasta.split("-");
+document.getElementById("pie").textContent=`Actualizado ${Dd}/${M}/${Y}`;
+document.getElementById("corteFecha").textContent=
+  `${+Dd} de ${MES[+M].toLowerCase()} de ${Y}`;
+render();
+addEventListener("resize", renderDia);
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", render);
+</script>
+
+</body>
+</html>
