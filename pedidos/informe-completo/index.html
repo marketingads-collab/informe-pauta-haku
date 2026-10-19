@@ -226,6 +226,20 @@ tr.zona:hover{background:var(--line-soft)}
 .zname{padding-left:46px!important; font-size:13px; color:var(--ink-2); position:relative}
 .zname::before{content:""; position:absolute; left:28px; top:50%; width:9px; height:1px;
   background:var(--ink-3); opacity:.45}
+/* conjuntos de una zona (sala: un conjunto por asesor) */
+.zdis{display:inline-flex; align-items:center; gap:6px; background:none; border:0; padding:0;
+  font:inherit; color:inherit; cursor:pointer; text-align:left}
+.zdis:focus-visible{outline:2px solid var(--accent); outline-offset:3px; border-radius:4px}
+.zdis .chev{width:8px; height:8px}
+.zdis[aria-expanded="true"] .chev{transform:rotate(90deg); color:var(--accent)}
+tr.cjr{background:var(--surface-2)}
+tr.cjr > td{padding-top:4px; padding-bottom:4px; font-size:12.5px}
+tr.cjr .bar i{opacity:.3; height:5px}
+.cjn{padding-left:66px!important; color:var(--ink-2)}
+.cjn b{font-weight:500}
+.cjn small{display:block; font-family:var(--font-m); font-size:10px; color:var(--ink-3);
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:260px}
+.u{font-size:10.5px; color:var(--ink-3); margin-left:3px; font-weight:400}
 
 /* chips */
 .chip{display:inline-block; font-family:var(--font-m); font-size:10.5px; font-weight:500;
@@ -490,6 +504,11 @@ const pesos = n => "$" + miles(n);
 const FILAS_TODAS = D.d.map(r=>({f:D.fechas[r[0]], e:r[1], z:r[2], t:r[3], ca:r[4], l:r[5],
   cost: r[5]>0 ? (r[6]??0)*r[5] : (r[6]??0), imp:r[7], alc:r[8], clk:r[9]}));
 let FILAS = FILAS_TODAS;       // se reduce cuando se filtra por call
+// D.dc = lo mismo, por conjunto, solo en zonas de Sala con mas de un conjunto (D.cj = nombres)
+const CJ_TODAS = (D.dc||[]).map(r=>({f:D.fechas[r[0]], e:r[1], z:r[2], t:r[3], ca:r[4], cj:r[5], l:r[6],
+  cost: r[6]>0 ? (r[7]??0)*r[6] : (r[7]??0), imp:r[8], alc:r[9], clk:r[10]}));
+let CJ = CJ_TODAS;
+const cjEnRango = rg => CJ.filter(r=>r.f>=rg.d && r.f<=rg.h);
 const F_MIN = D.fechas[0], F_MAX = D.hasta;
 
 const enRango = rg => FILAS.filter(r=>r.f>=rg.d && r.f<=rg.h);
@@ -694,6 +713,25 @@ const R2 = R1, R3 = R1;
 const SELECTORES = [...document.querySelectorAll("[data-rango]")].map(el=>
   crearRango(el, R1, ()=>{ SELECTORES.forEach(s=>s.etiqueta()); abiertas.clear(); render(); }));
 const abiertas = new Set();          // sociedades desplegadas
+const zAb = new Set();               // zonas desplegadas en sus conjuntos
+// "META_PF_SanJoseGuaviare_Asesor1_Motomovil_Wpp" -> "Asesor 1": se quitan prefijo,
+// zona, sociedad y sufijos; lo que queda es lo que distingue al conjunto.
+const canonJ = t => t.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]/g,"");
+function etiquetaCj(n, zona, soc){
+  const fuera = new Set(["meta","pf","wa","wpp","whatsapp","v2","diario","copia", canonJ(zona)]);
+  const cs = canonJ(soc.replace(/ Medell[ií]n$/,""));
+  const tel = (n.match(/-\s*(\d{3,5})\s*$/)||[])[1];          // linea de WhatsApp: -3687
+  const q = n.replace(/\s*-\s*\d{3,5}\s*$/,"").split(/[_]+/).map(x=>x.trim()).filter(x=>{
+    const c = canonJ(x); return c && !fuera.has(c) && c!==cs && !(cs && (cs.includes(c) && c.length>3)); });
+  if(tel) q.push("línea " + tel);
+  const t = q.join(" ").replace(/([a-zA-Z])(\d)/g,"$1 $2");
+  return t ? t[0].toUpperCase() + t.slice(1) : "Conjunto principal";
+}
+// 573213640847 -> " (321 364 0847)": quien lee no sabe cual asesor es el 1 o el 2
+const telCj = i => { const t=((D.cjt||[])[i]||"").replace(/^57(?=\d{10}$)/,"");
+  return t ? ` (${t.length===10 ? t.replace(/(\d{3})(\d{3})(\d{4})/,"$1 $2 $3") : t})` : ""; };
+const esWa = ca => D.canales[ca]==="WhatsApp";
+const unidad = ca => esWa(ca) ? `<span class="u">conv.</span>` : "";
 let tipoSel = null;                  // pestaña activa: Call / Sala
 let orden = "nombre";                // "nombre" = fijo · "cpl" = del mas barato al mas caro
 let vista = "resultados";            // "resultados" | "entrega"
@@ -726,6 +764,7 @@ function filaAds(e, z, ncol){
   return `<tr class="adrow"><td colspan="${ncol}">${cab}${cuerpo}</td></tr>`;
 }
 const CHEV_AD = `<svg viewBox="0 0 10 10" aria-hidden="true"><path d="M3 1.5 7 5 3 8.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>`;
+const CHEV_Z = `<svg class="chev" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 L11 8 L6 12.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 const btnAd = k => AD.length ? `<td class="adb"><button type="button" class="adbtn" data-k="${k}" aria-expanded="${adAb.has(k)}">Anuncios ${CHEV_AD}</button></td>` : "";
 
 function renderTabla(){
@@ -744,7 +783,7 @@ function renderTabla(){
   if(!disp.includes(tipoSel)) tipoSel = disp[0] ?? null;
   pintarTabs(disp, porTipo);
   const ayuda={"Call":"Leads que entran al call center.",
-               "Sala":"Leads que llegan a la sala de ventas."};
+               "Sala":"Leads que llegan a la sala de ventas. En WhatsApp se cuentan las conversaciones que se inician. Las zonas con varios conjuntos se abren para ver cada uno."};
   document.getElementById("tabHelp").textContent = ayuda[D.tipos[tipoSel]] ?? "";
   if(tipoSel==null){
     document.querySelector("#tbl thead").innerHTML="";
@@ -758,17 +797,24 @@ function renderTabla(){
   const socA=sumar(deTipo(filas), r=>r.e),    zonA=sumar(deTipo(filas), kZ);
   const antS=sumar(deTipo(filasAnt), r=>r.e), antZ=sumar(deTipo(filasAnt), kZ);
 
+  const kC=r=>r.e+"|"+r.z+"|"+r.ca+"|"+r.cj;
+  const cjF=cjEnRango(R1).filter(r=>r.t===tipoSel), cjAntF=pa.h>=F_MIN ? cjEnRango(pa).filter(r=>r.t===tipoSel) : [];
+  const cjA=sumar(cjF, kC), cjAnt=sumar(cjAntF, kC);
+  const conjDe = k => [...cjA].filter(([kk,a])=>kk.startsWith(k+"|") && (a.l>0 || a.imp>0)).map(([kk,a])=>
+      ({cj:+kk.split("|")[3], l:a.l, c:val(a), m:metDe(a), cp:val(cjAnt.get(kk))}))
+    .sort(orden==="cpl" ? porCpl : (a,b)=>D.cj[a.cj].localeCompare(D.cj[b.cj],"es",{numeric:true}));
   const socs=[...socA].filter(([,a])=>a.l>0).map(([e,a])=>({
       e, nom:D.empresas[e], l:a.l, c:val(a), m:metDe(a), cp:val(antS.get(e)),
       zonas:[...zonA].filter(([k,z])=>+k.split("|")[0]===e && z.l>0).map(([k,z])=>{
         const [,zz,ca]=k.split("|").map(Number);
-        return {z:zz, ca, l:z.l, c:val(z), m:metDe(z), cp:val(antZ.get(k))};
+        return {z:zz, ca, k, l:z.l, c:val(z), m:metDe(z), cp:val(antZ.get(k)), cjs:conjDe(k)};
       }).sort(cmpZona)
     })).sort(cmpSoc);
 
   // Escala al percentil 90, no al maximo: una sola zona carisima dejaba todas las
   // demas barras por debajo del 25% del ancho y las volvia ilegibles.
   const vals=socs.flatMap(s=>[s.c, ...s.zonas.map(z=>z.c)]).filter(v=>v>0).sort((a,b)=>a-b);
+  socs.forEach(s=>s.wa = s.zonas.length>0 && s.zonas.every(z=>esWa(z.ca)));
   const tope=vals.length ? vals[Math.min(vals.length-1, Math.floor(vals.length*0.9))] : 1;
   const col=colTipo(D.tipos[tipoSel]);
   const barra=c=>{
@@ -817,26 +863,44 @@ function renderTabla(){
         <td class="l">${canalesDe(s)}</td>
         ${ENT ? celdasEnt(s.m, s.zonas.length>1) + `<td class="num">${miles(s.l)}</td>`
               : barra(s.c) + (SC ? "" : `<td class="num">${s.c?pesos(s.c):"—"}</td>`)
-                           + `<td class="num">${miles(s.l)}</td>`
+                           + `<td class="num">${miles(s.l)}${s.wa?unidad(s.zonas[0].ca):""}</td>`
                            + `<td class="num">${deltaHtml(s.c,s.cp,SC)}</td>`}
       ${btnAd("s"+s.e)}</tr>`;
     if(adAb.has("s"+s.e)) out += filaAds(s.e, null, NCOL);
-    if(ab) s.zonas.forEach(z=>{ out+=`
+    if(ab) s.zonas.forEach(z=>{
+      const nc=z.cjs.length, zab=nc>1 && zAb.has(z.k);
+      const nomZ = nc>1
+        ? `<button type="button" class="zdis" data-k="${z.k}" aria-expanded="${zab}">${CHEV_Z}<span>${D.zonas[z.z]}</span><span class="cnt">${nc} conjuntos</span></button>`
+        : D.zonas[z.z];
+      out+=`
       <tr class="zona">
-        <td class="l zname">${D.zonas[z.z]}</td>
+        <td class="l zname">${nomZ}</td>
         <td class="l">${chipCanal(D.canales[z.ca])}</td>
         ${ENT ? celdasEnt(z.m, false) + `<td class="num">${miles(z.l)}</td>`
               : barra(z.c) + (SC ? "" : `<td class="num">${z.c?pesos(z.c):"—"}</td>`)
-                           + `<td class="num">${miles(z.l)}</td>`
+                           + `<td class="num">${miles(z.l)}${unidad(z.ca)}</td>`
                            + `<td class="num">${deltaHtml(z.c,z.cp,SC)}</td>`}
       ${btnAd("z"+s.e+"|"+z.z+"|"+z.ca)}</tr>`;
-      if(adAb.has("z"+s.e+"|"+z.z+"|"+z.ca)) out += filaAds(s.e, z.z, NCOL); });
+      if(adAb.has("z"+s.e+"|"+z.z+"|"+z.ca)) out += filaAds(s.e, z.z, NCOL);
+      if(zab) z.cjs.forEach(c=>{ const nom=D.cj[c.cj]; out+=`
+      <tr class="cjr">
+        <td class="l cjn"><b>${escA(etiquetaCj(nom, D.zonas[z.z], s.nom))}${telCj(c.cj)}</b><small title="${escA(nom)}">${escA(nom)}</small></td>
+        <td class="l"></td>
+        ${ENT ? celdasEnt(c.m, false) + `<td class="num">${miles(c.l)}</td>`
+              : barra(c.c) + (SC ? "" : `<td class="num">${c.c?pesos(c.c):"—"}</td>`)
+                           + `<td class="num">${miles(c.l)}${unidad(z.ca)}</td>`
+                           + `<td class="num">${deltaHtml(c.c,c.cp,SC)}</td>`}
+      ${AD.length?"<td></td>":""}</tr>`; });
+    });
     return out;
   }).join("");
 
   document.querySelector("#tbl tbody").innerHTML = html ||
     `<tr><td colspan="8" class="l" style="color:var(--ink-3);padding:22px 12px">Sin leads de ${D.tipos[tipoSel]} en estas fechas.</td></tr>`;
 
+  document.querySelectorAll("#tbl .zdis").forEach(b=>{
+    b.onclick=()=>{ const k=b.dataset.k; zAb.has(k)?zAb.delete(k):zAb.add(k); renderTabla(); };
+  });
   document.querySelectorAll("#tbl .adbtn").forEach(b=>{
     b.onclick=()=>{ const k=b.dataset.k; adAb.has(k)?adAb.delete(k):adAb.add(k); renderTabla(); };
   });
@@ -1334,6 +1398,7 @@ function filtrarGrupo(g){
   grupoInf = g;
   const k = g ? GRUPOS_INF[g] : null;
   FILAS = k ? FILAS_TODAS.filter(r=>k.has(r.e+"|"+r.z)) : FILAS_TODAS;
+  CJ = k ? CJ_TODAS.filter(r=>k.has(r.e+"|"+r.z)) : CJ_TODAS;
   const box = document.getElementById("gfilt"); box.hidden = false;
   box.innerHTML = `<span class="soclbl">Ver</span>` + [null, ...Object.keys(GRUPOS_INF)].map(x=>
     `<button type="button" class="fbtn" data-g="${x??""}" aria-pressed="${x===g}">${x ?? "Todos los calls"}</button>`).join("");
