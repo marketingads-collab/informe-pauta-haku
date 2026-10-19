@@ -504,7 +504,7 @@ const pesos = n => "$" + miles(n);
 const FILAS_TODAS = D.d.map(r=>({f:D.fechas[r[0]], e:r[1], z:r[2], t:r[3], ca:r[4], l:r[5],
   cost: r[5]>0 ? (r[6]??0)*r[5] : (r[6]??0), imp:r[7], alc:r[8], clk:r[9]}));
 let FILAS = FILAS_TODAS;       // se reduce cuando se filtra por call
-// D.dc = lo mismo, por conjunto, solo en zonas de Sala con mas de un conjunto (D.cj = nombres)
+// D.dc = lo mismo, por conjunto, solo en zonas de Sala con mas de un conjunto (D.cj = nombres, D.cjt = WhatsApp, D.cja = anuncio)
 const CJ_TODAS = (D.dc||[]).map(r=>({f:D.fechas[r[0]], e:r[1], z:r[2], t:r[3], ca:r[4], cj:r[5], l:r[6],
   cost: r[6]>0 ? (r[7]??0)*r[6] : (r[7]??0), imp:r[8], alc:r[9], clk:r[10]}));
 let CJ = CJ_TODAS;
@@ -802,7 +802,8 @@ function renderTabla(){
   const cjA=sumar(cjF, kC), cjAnt=sumar(cjAntF, kC);
   const conjDe = k => [...cjA].filter(([kk,a])=>kk.startsWith(k+"|") && (a.l>0 || a.imp>0)).map(([kk,a])=>
       ({cj:+kk.split("|")[3], l:a.l, c:val(a), m:metDe(a), cp:val(cjAnt.get(kk))}))
-    .sort(orden==="cpl" ? porCpl : (a,b)=>D.cj[a.cj].localeCompare(D.cj[b.cj],"es",{numeric:true}));
+    .sort(orden==="cpl" ? porCpl : (a,b)=>D.cj[a.cj].localeCompare(D.cj[b.cj],"es",{numeric:true})
+                                   || ((D.cja||[])[a.cj]||"").localeCompare((D.cja||[])[b.cj]||"","es",{numeric:true}));
   const socs=[...socA].filter(([,a])=>a.l>0).map(([e,a])=>({
       e, nom:D.empresas[e], l:a.l, c:val(a), m:metDe(a), cp:val(antS.get(e)),
       zonas:[...zonA].filter(([k,z])=>+k.split("|")[0]===e && z.l>0).map(([k,z])=>{
@@ -882,9 +883,14 @@ function renderTabla(){
                            + `<td class="num">${deltaHtml(z.c,z.cp,SC)}</td>`}
       ${btnAd("z"+s.e+"|"+z.z+"|"+z.ca)}</tr>`;
       if(adAb.has("z"+s.e+"|"+z.z+"|"+z.ca)) out += filaAds(s.e, z.z, NCOL);
-      if(zab) z.cjs.forEach(c=>{ const nom=D.cj[c.cj]; out+=`
+      // Conjuntos que quedan con el mismo rotulo (Capital: mismo nombre, uno por anuncio)
+      // se distinguen por su anuncio.
+      const etq = z.cjs.map(c=>etiquetaCj(D.cj[c.cj], D.zonas[z.z], s.nom));
+      const rep = etq.map(t=>etq.filter(x=>x===t).length>1);
+      if(zab) z.cjs.forEach((c,i)=>{ const nom=D.cj[c.cj], an=(D.cja||[])[c.cj];
+        const rot = rep[i] && an ? "Anuncio " + an : etq[i] + telCj(c.cj); out+=`
       <tr class="cjr">
-        <td class="l cjn"><b>${escA(etiquetaCj(nom, D.zonas[z.z], s.nom))}${telCj(c.cj)}</b><small title="${escA(nom)}">${escA(nom)}</small></td>
+        <td class="l cjn"><b>${escA(rot)}</b><small title="${escA(nom)}">${escA(nom)}</small></td>
         <td class="l"></td>
         ${ENT ? celdasEnt(c.m, false) + `<td class="num">${miles(c.l)}</td>`
               : barra(c.c) + (SC ? "" : `<td class="num">${c.c?pesos(c.c):"—"}</td>`)
