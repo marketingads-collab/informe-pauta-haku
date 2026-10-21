@@ -751,9 +751,11 @@ function topAds(e, z, n=3, cj=null){
 }
 const escA = t => String(t??"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 function filaAds(e, z, ncol, cj=null){
-  const t = topAds(e, z, 3, cj);
+  // Con el filtro del call de Medellín salen TODOS los anuncios que trajeron leads, no solo 3.
+  const todos = /medell[ií]n/i.test(grupoInf||"");
+  const t = topAds(e, z, todos ? Infinity : 3, cj);
   const lib = t.pagina ? `https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=CO&view_all_page_id=${encodeURIComponent(t.pagina)}&search_type=page&media_type=all` : "";
-  const cab = `<div class="adtit"><span>${cj==null?"Anuncios que más leads traen":"Anuncios de este conjunto"} · ${fmtRango(R1.d,R1.h)}</span>${lib?`<a href="${escA(lib)}" target="_blank" rel="noopener">Ver todos los anuncios activos de la sociedad ↗</a>`:""}</div>`;
+  const cab = `<div class="adtit"><span>${cj!=null?"Anuncios de este conjunto":todos?"Anuncios que trajeron leads":"Anuncios que más leads traen"} · ${fmtRango(R1.d,R1.h)}</span>${lib?`<a href="${escA(lib)}" target="_blank" rel="noopener">Ver todos los anuncios activos de la sociedad ↗</a>`:""}</div>`;
   const cuerpo = !t.top.length ? `<div class="adsvac">No trajo leads en estas fechas.</div>`
     : `<div class="adg">${t.top.map((x,i)=>{ const [nom,fmt,act,mini,ver]=x.ad; const pct=t.tot?Math.round(x.l/t.tot*100):0;
         return `<div class="adc">${mini?`<img src="${escA(mini)}" alt="" loading="lazy" referrerpolicy="no-referrer">`:""}
