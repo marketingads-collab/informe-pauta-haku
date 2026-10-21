@@ -737,12 +737,12 @@ let orden = "nombre";                // "nombre" = fijo · "cpl" = del mas barat
 let vista = "resultados";            // "resultados" | "entrega"
 
 // ---------- top de anuncios (sociedad o zona, fechas y pestaña elegidas) ----------
-// D.ad = [fecha, sociedad, zona, tipo, anuncio, leads]; D.an = [nombre, formato, activo, miniatura, link, pagina]
-const AD = (D.ad||[]).map(r=>({f:D.fechas[r[0]], e:r[1], z:r[2], t:r[3], a:r[4], l:r[5]}));
+// D.ad = [fecha, sociedad, zona, tipo, anuncio, leads, conjunto (-1 si la zona tiene uno solo)]; D.an = [nombre, formato, activo, miniatura, link, pagina]
+const AD = (D.ad||[]).map(r=>({f:D.fechas[r[0]], e:r[1], z:r[2], t:r[3], a:r[4], l:r[5], cj:r[6]??-1}));
 const adAb = new Set();
-function topAds(e, z, n=3){
+function topAds(e, z, n=3, cj=null){
   const k = grupoInf ? GRUPOS_INF[grupoInf] : null;
-  const fs = AD.filter(r=>r.e===e && r.t===tipoSel && r.f>=R1.d && r.f<=R1.h && (z==null || r.z===z) && (!k || k.has(r.e+"|"+r.z)));
+  const fs = AD.filter(r=>r.e===e && r.t===tipoSel && r.f>=R1.d && r.f<=R1.h && (z==null || r.z===z) && (cj==null || r.cj===cj) && (!k || k.has(r.e+"|"+r.z)));
   const por = new Map(); let tot = 0;
   fs.forEach(r=>{ por.set(r.a,(por.get(r.a)||0)+r.l); tot += r.l; });
   const pag = {}; fs.forEach(r=>{ const p=D.an[r.a][5]; if(p) pag[p]=(pag[p]||0)+r.l; });
@@ -750,10 +750,10 @@ function topAds(e, z, n=3){
           top:[...por].sort((x,y)=>y[1]-x[1]).slice(0,n).map(([a,l])=>({ad:D.an[a], l}))};
 }
 const escA = t => String(t??"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-function filaAds(e, z, ncol){
-  const t = topAds(e, z);
+function filaAds(e, z, ncol, cj=null){
+  const t = topAds(e, z, 3, cj);
   const lib = t.pagina ? `https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=CO&view_all_page_id=${encodeURIComponent(t.pagina)}&search_type=page&media_type=all` : "";
-  const cab = `<div class="adtit"><span>Anuncios que más leads traen · ${fmtRango(R1.d,R1.h)}</span>${lib?`<a href="${escA(lib)}" target="_blank" rel="noopener">Ver todos los anuncios activos de la sociedad ↗</a>`:""}</div>`;
+  const cab = `<div class="adtit"><span>${cj==null?"Anuncios que más leads traen":"Anuncios de este conjunto"} · ${fmtRango(R1.d,R1.h)}</span>${lib?`<a href="${escA(lib)}" target="_blank" rel="noopener">Ver todos los anuncios activos de la sociedad ↗</a>`:""}</div>`;
   const cuerpo = !t.top.length ? `<div class="adsvac">No trajo leads en estas fechas.</div>`
     : `<div class="adg">${t.top.map((x,i)=>{ const [nom,fmt,act,mini,ver]=x.ad; const pct=t.tot?Math.round(x.l/t.tot*100):0;
         return `<div class="adc">${mini?`<img src="${escA(mini)}" alt="" loading="lazy" referrerpolicy="no-referrer">`:""}
@@ -896,7 +896,8 @@ function renderTabla(){
               : barra(c.c) + (SC ? "" : `<td class="num">${c.c?pesos(c.c):"—"}</td>`)
                            + `<td class="num">${miles(c.l)}${unidad(z.ca)}</td>`
                            + `<td class="num">${deltaHtml(c.c,c.cp,SC)}</td>`}
-      ${AD.length?"<td></td>":""}</tr>`; });
+      ${AD.length ? (AD.some(r=>r.cj===c.cj) ? btnAd("c"+c.cj) : "<td></td>") : ""}</tr>`;
+        if(adAb.has("c"+c.cj)) out += filaAds(s.e, z.z, NCOL, c.cj); });
     });
     return out;
   }).join("");
