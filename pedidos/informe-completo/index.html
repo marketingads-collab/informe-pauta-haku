@@ -221,8 +221,6 @@ tr.soc.open .chev{transform:rotate(90deg); color:var(--accent)}
   padding:1.5px 6px; border-radius:20px; background:var(--surface-2);
   border:1px solid var(--line); color:var(--ink-3); vertical-align:1px}
 .tab[aria-pressed="true"] .tabn{color:var(--c); border-color:currentColor}
-/* pestaña Alcance: su numero es plata, no leads */
-.tab.al .tabn{font-size:10.5px}
 @media (max-width:560px){
   .tabs{padding:0 4px; overflow-x:auto; scrollbar-width:none}
   .tabs::-webkit-scrollbar{display:none}
@@ -528,8 +526,6 @@ const AL_T = -1;                     // tipoSel de la pestaña Alcance
 const ALF = (D.al||[]).map(r=>({f:r[0], e:r[1], c:r[2], z:r[3], cost:r[4], imp:r[5], alc:r[6], clk:r[7], l:0}));
 const alEnRango = rg => ALF.filter(r=>r.f>=rg.d && r.f<=rg.h);
 const cpmDe = a => a && a.imp>0 ? Math.round(a.cost/a.imp*1000) : null;
-const pesosC = n => n>=1e6 ? "$"+(n/1e6).toLocaleString("es-CO",{maximumFractionDigits:1})+" M"
-                  : n>=1e3 ? "$"+Math.round(n/1e3)+" mil" : pesos(n);
 
 const enRango = rg => FILAS.filter(r=>r.f>=rg.d && r.f<=rg.h);
 function sumar(filas, clave){
@@ -806,7 +802,9 @@ function renderTabla(){
   const alInv = alF.reduce((a,r)=>a+r.cost,0);
   if(alInv>0) disp.push(AL_T);
   if(!disp.includes(tipoSel)) tipoSel = disp[0] ?? null;
-  pintarTabs(disp, porTipo, alInv);
+  // campañas de verdad: "Alcance Octubre" de dos sociedades son dos campañas
+  const alCamp = new Set(alF.filter(r=>r.cost>0).map(r=>r.e+"|"+r.c)).size;
+  pintarTabs(disp, porTipo, alCamp);
   const esAl = tipoSel===AL_T;
   document.getElementById("vRes").closest(".tacts").hidden = esAl;
   document.getElementById("ordCpl").textContent = esAl ? "Más inversión" : SC ? "Más leads" : "Costo por lead";
@@ -1040,14 +1038,14 @@ function renderAlcance(filas){
   bc2.onclick=()=>exportar(bc2);
 }
 
-function pintarTabs(disp, porTipo, alInv){
+function pintarTabs(disp, porTipo, alCamp){
   const box=document.getElementById("tabs"); box.innerHTML="";
   disp.forEach(t=>{
     const al=t===AL_T, nom=al ? "Alcance" : D.tipos[t];
     const b=document.createElement("button");
     b.type="button"; b.className="tab"+(al?" al":""); b.style.setProperty("--c", colTipo(nom));
     b.setAttribute("aria-pressed", t===tipoSel);
-    b.innerHTML = al ? `Alcance <span class="tabn" title="inversión en estas fechas">${pesosC(alInv)}</span>`
+    b.innerHTML = al ? `Alcance <span class="tabn" title="campañas con inversión en estas fechas">${alCamp}</span>`
                      : `${nom} <span class="tabn">${miles(porTipo.get(t).l)}</span>`;
     b.onclick=()=>{ tipoSel=t; abiertas.clear(); renderTabla(); renderAnio(); };
     box.appendChild(b);
