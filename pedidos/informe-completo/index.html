@@ -226,6 +226,12 @@ tr.soc.open .chev{transform:rotate(90deg); color:var(--accent)}
   .tabs::-webkit-scrollbar{display:none}
   .tab{padding:13px 8px 11px; flex:none}
 }
+/* anuncios dentro de la pestaña Alcance */
+.alad-in{display:flex; align-items:center; gap:9px; padding-left:66px; min-width:0}
+.alad-in img{width:34px; height:34px; object-fit:cover; border-radius:5px; flex:none; background:var(--line-soft)}
+.alad-in .nm{display:block; max-width:240px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--ink-2)}
+.alad-in small{display:block; font-size:10.5px; color:var(--ink-3)}
+.alad-in a{color:var(--accent-ink)}
 /* zonas */
 tr.zona{background:var(--surface-2); border-bottom:0}
 tr.zona > td{padding-top:6px; padding-bottom:6px}
@@ -525,6 +531,9 @@ const F_MIN = D.fechas[0], F_MAX = D.hasta;
 const AL_T = -1;                     // tipoSel de la pestaña Alcance
 const ALF = (D.al||[]).map(r=>({f:r[0], e:r[1], c:r[2], z:r[3], cost:r[4], imp:r[5], alc:r[6], clk:r[7], l:0}));
 const alEnRango = rg => ALF.filter(r=>r.f>=rg.d && r.f<=rg.h);
+// D.ala = [fecha, sociedad, campaña, zona, anuncio, inversion, impresiones, alcance]; D.al_a = [nombre, formato, activo, miniatura, link]
+const ALA = (D.ala||[]).map(r=>({f:r[0], e:r[1], c:r[2], z:r[3], a:r[4], cost:r[5], imp:r[6], alc:r[7], clk:0, l:0}));
+const alaEnRango = rg => ALA.filter(r=>r.f>=rg.d && r.f<=rg.h);
 const cpmDe = a => a && a.imp>0 ? Math.round(a.cost/a.imp*1000) : null;
 
 const enRango = rg => FILAS.filter(r=>r.f>=rg.d && r.f<=rg.h);
@@ -968,18 +977,22 @@ function renderTabla(){
   bc2.onclick=()=>exportar(bc2);
 }
 
-// Tabla de Alcance: sociedad > campaña (> zona si la campaña tiene varias).
-// Sin leads: inversion, impresiones, personas alcanzadas, frecuencia, CPM, clics y CTR.
+// Tabla de Alcance: sociedad > campaña > zona > anuncio.
+// Sin leads ni clics (no es su objetivo): inversion, impresiones, personas alcanzadas, frecuencia y CPM.
 // La flecha compara el alcance (personas) con los mismos dias justo antes: subir es bueno.
-const alAb = new Set();              // campañas desplegadas en sus zonas
+const alAb = new Set();              // campañas y zonas desplegadas
 function renderAlcance(filas){
   const pa=periodoAnterior(R1), ant = pa.h>=F_MIN ? alEnRango(pa) : [];
   const S=sumar(filas, r=>r.e), C=sumar(filas, r=>r.e+"|"+r.c), Z=sumar(filas, r=>r.e+"|"+r.c+"|"+r.z);
   const SA=sumar(ant, r=>r.e), CA=sumar(ant, r=>r.e+"|"+r.c), ZA=sumar(ant, r=>r.e+"|"+r.c+"|"+r.z);
   const porInv=(a,b)=>b.a.cost-a.a.cost;
+  const kA=r=>r.e+"|"+r.c+"|"+r.z+"|"+r.a;
+  const AN=sumar(alaEnRango(R1), kA), ANA=sumar(pa.h>=F_MIN ? alaEnRango(pa) : [], kA);
+  const anunciosDe = kz => [...AN].filter(([k,a])=>k.startsWith(kz+"|") && (a.cost>0 || a.imp>0))
+    .map(([k,a])=>({an:+k.split("|")[3], a, ant:ANA.get(k)})).sort(porInv);
   const socs=[...S].filter(([,a])=>a.cost>0).map(([e,a])=>({e, nom:D.al_e[e], a, ant:SA.get(e),
     camps:[...C].filter(([k,c])=>+k.split("|")[0]===e && c.cost>0).map(([k,c])=>({k, c:+k.split("|")[1], a:c, ant:CA.get(k),
-      zonas:[...Z].filter(([kk,z])=>kk.startsWith(k+"|") && z.cost>0).map(([kk,z])=>({z:+kk.split("|")[2], a:z, ant:ZA.get(kk)}))
+      zonas:[...Z].filter(([kk,z])=>kk.startsWith(k+"|") && z.cost>0).map(([kk,z])=>({z:+kk.split("|")[2], k:kk, a:z, ant:ZA.get(kk), ads:anunciosDe(kk)}))
         .sort(orden==="cpl" ? porInv : (x,y)=>D.al_z[x.z].localeCompare(D.al_z[y.z],"es"))
     })).sort(orden==="cpl" ? porInv : (x,y)=>D.al_c[x.c].localeCompare(D.al_c[y.c],"es",{numeric:true}))
   })).sort(orden==="cpl" ? porInv : (x,y)=>x.nom.localeCompare(y.nom,"es"));
@@ -988,7 +1001,7 @@ function renderAlcance(filas){
   document.querySelector("#tbl thead").innerHTML =
     `<tr><th class="l">Sociedad · campaña</th><th class="num">Inversión</th><th class="num">Impresiones</th>
      <th class="num" title="personas únicas">Alcance</th><th class="num">Frec.</th><th class="num" title="costo por mil impresiones">CPM</th>
-     <th class="num">Clics</th><th class="num">CTR</th><th class="num" title="${titAnt}">Alcance vs. ant.</th></tr>`;
+     <th class="num" title="${titAnt}">Alcance vs. ant.</th></tr>`;
   const dec = v => v.toLocaleString("es-CO",{minimumFractionDigits:2,maximumFractionDigits:2});
   // aprox: arriba de una zona el alcance es suma de personas unicas (puede repetir gente)
   const celdas = (a, an, aprox) => {
@@ -996,8 +1009,7 @@ function renderAlcance(filas){
     const cpm=cpmDe(a);
     return `<td class="num">${pesos(a.cost)}</td><td class="num">${miles(m[0])}</td>`
       + `<td class="num">${ap}${miles(m[1])}</td><td class="num">${ap}${dec(m[3]/100)}</td>`
-      + `<td class="num">${cpm?pesos(cpm):"—"}</td><td class="num">${miles(m[2])}</td>`
-      + `<td class="num">${ap}${dec(m[4]/100)}%</td><td class="num">${deltaHtml(m[1], an ? an.alc : null, true)}</td>`;
+      + `<td class="num">${cpm?pesos(cpm):"—"}</td><td class="num">${deltaHtml(m[1], an ? an.alc : null, true)}</td>`;
   };
   const html = socs.map(s=>{
     const ab=abiertas.has(s.e), n=s.camps.length;
@@ -1005,19 +1017,25 @@ function renderAlcance(filas){
         <button type="button" class="dis" aria-expanded="${ab}">${CHEV_Z}<span>${s.nom}</span>
         <span class="cnt">${n} campaña${n===1?"":"s"}</span></button></td>${celdas(s.a, s.ant, n>1)}</tr>`;
     if(ab) s.camps.forEach(c=>{
-      const nz=c.zonas.length, zab=nz>1 && alAb.has(c.k);
-      const nomC = nz>1
-        ? `<button type="button" class="zdis" data-k="${c.k}" aria-expanded="${zab}">${CHEV_Z}<span>${escA(D.al_c[c.c])}</span><span class="cnt">${nz} zonas</span></button>`
-        : escA(D.al_c[c.c]);
-      out+=`<tr class="zona"><td class="l zname">${nomC}</td>${celdas(c.a, c.ant, nz>1)}</tr>`;
-      if(zab) c.zonas.forEach(z=>{ out+=`<tr class="cjr"><td class="l cjn"><b>${escA(D.al_z[z.z])}</b></td>${celdas(z.a, z.ant, false)}</tr>`; });
+      const nz=c.zonas.length, cab=alAb.has(c.k);
+      out+=`<tr class="zona"><td class="l zname"><button type="button" class="zdis" data-k="${c.k}" aria-expanded="${cab}">${CHEV_Z}<span>${escA(D.al_c[c.c])}</span><span class="cnt">${nz} zona${nz===1?"":"s"}</span></button></td>${celdas(c.a, c.ant, nz>1)}</tr>`;
+      if(cab) c.zonas.forEach(z=>{
+        // con una sola zona sus anuncios se ven de una: no hace falta otro toque
+        const na=z.ads.length, zab=na>0 && (nz===1 || alAb.has(z.k));
+        const nomZ = na>0 && nz>1
+          ? `<button type="button" class="zdis" data-k="${z.k}" aria-expanded="${zab}">${CHEV_Z}<b>${escA(D.al_z[z.z])}</b><span class="cnt">${na} anuncio${na===1?"":"s"}</span></button>`
+          : `<b>${escA(D.al_z[z.z])}</b>`;
+        out+=`<tr class="cjr"><td class="l cjn">${nomZ}</td>${celdas(z.a, z.ant, false)}</tr>`;
+        if(zab) z.ads.forEach(x=>{ const [nom,fmt,act,mini,ver]=D.al_a[x.an];
+          out+=`<tr class="cjr alad"><td class="l"><div class="alad-in">${mini?`<img src="${escA(mini)}" alt="" loading="lazy" referrerpolicy="no-referrer">`:""}<div><span class="nm" title="${escA(nom)}">${escA(nom)}</span><small>${escA(fmt)}${act?"":" · ya no está activo"}${ver?` · <a href="${escA(ver)}" target="_blank" rel="noopener">Ver anuncio ↗</a>`:""}</small></div></div></td>${celdas(x.a, x.ant, false)}</tr>`; });
+      });
     });
     return out;
   }).join("");
   const tot=sumar(filas, ()=>0).get(0);
   document.querySelector("#tbl tbody").innerHTML = html
     ? html + `<tr class="soc"><td class="l"><b>Total alcance</b></td>${celdas(tot, sumar(ant, ()=>0).get(0), true)}</tr>`
-    : `<tr><td colspan="9" class="l" style="color:var(--ink-3);padding:22px 12px">Sin campañas de alcance en estas fechas.</td></tr>`;
+    : `<tr><td colspan="7" class="l" style="color:var(--ink-3);padding:22px 12px">Sin campañas de alcance en estas fechas.</td></tr>`;
 
   document.querySelectorAll("#tbl .zdis").forEach(b=>{
     b.onclick=()=>{ const k=b.dataset.k; alAb.has(k)?alAb.delete(k):alAb.add(k); renderTabla(); };
@@ -1434,18 +1452,18 @@ function filasDatos(conFecha){
 function nombreArchivo(ext){ return `pauta-haku-${R1.d}_a_${R1.h}.${ext}`; }
 
 // Excel de la pestaña Alcance: sus propias columnas (no hay leads ni CPL).
-const CAB_AL = ["Fecha","Sociedad","Campaña","Zona","Inversión","Impresiones","Alcance","Frecuencia","Clics enlace","CTR %","CPM"];
+const CAB_AL = ["Fecha","Sociedad","Campaña","Zona","Inversión","Impresiones","Alcance","Frecuencia","CPM"];
 function filasAlcance(conFecha){
-  return alEnRango(R1).map(r=>{ const [imp,alc,clk,fre,ctr]=metDe(r), [y,m,d]=r.f.split("-").map(Number);
-    return [conFecha ? new Date(y,m-1,d) : r.f, D.al_e[r.e], D.al_c[r.c], D.al_z[r.z], Math.round(r.cost), imp, alc, fre/100, clk, ctr/100, cpmDe(r)]; });
+  return alEnRango(R1).map(r=>{ const [imp,alc,,fre]=metDe(r), [y,m,d]=r.f.split("-").map(Number);
+    return [conFecha ? new Date(y,m-1,d) : r.f, D.al_e[r.e], D.al_c[r.c], D.al_z[r.z], Math.round(r.cost), imp, alc, fre/100, cpmDe(r)]; });
 }
 async function descargarExcel(){
   const XLSX = await cargarXlsx();
   if(tipoSel===AL_T){
     const datos=filasAlcance(true), ws=XLSX.utils.aoa_to_sheet([CAB_AL, ...datos]);
-    ws["!cols"]=[11,22,30,20,12,12,11,11,12,8,10].map(w=>({wch:w}));
+    ws["!cols"]=[11,22,30,20,12,12,11,11,10].map(w=>({wch:w}));
     ws["!autofilter"]={ref: XLSX.utils.encode_range({s:{r:0,c:0}, e:{r:datos.length, c:CAB_AL.length-1}})};
-    const Z=["yyyy-mm-dd",null,null,null,'"$"#,##0',"#,##0","#,##0","0.00","#,##0",'0.00"%"','"$"#,##0'];
+    const Z=["yyyy-mm-dd",null,null,null,'"$"#,##0',"#,##0","#,##0","0.00",'"$"#,##0'];
     datos.forEach((_,i)=>Z.forEach((z,c)=>{ const cel=ws[XLSX.utils.encode_cell({r:i+1,c})]; if(z && cel && cel.t==="n") cel.z=z; }));
     const leeme=XLSX.utils.aoa_to_sheet([["Campañas de alcance — Haku"],[],["Fechas", fmtRango(R1.d,R1.h)],["Datos hasta", D.hasta],
       ["Qué son","Campañas de alcance, reconocimiento, tráfico y ferias. No buscan leads, por eso no tienen CPL."],
