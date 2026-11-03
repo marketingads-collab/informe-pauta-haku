@@ -398,7 +398,7 @@ footer{margin-top:44px; padding-top:20px; border-top:1px solid var(--line);
     <div class="shead">
       <div>
         <h2>Cada sociedad, zona por zona</h2>
-        <p>Elige Call, Sala o Alcance en las pestañas y toca una sociedad para ver sus zonas. La flecha compara el costo por lead contra los mismos días justo antes de las fechas elegidas.</p>
+        <p>Elige Call o Sala en las pestañas y toca una sociedad para ver sus zonas. La flecha compara el costo por lead contra los mismos días justo antes de las fechas elegidas.</p>
       </div>
       <div class="rango" data-rango></div>
     </div>
@@ -1559,6 +1559,11 @@ function filtrarGrupo(g){
   abiertas.clear(); G2.sel = [];
   if(g && tipoSel===AL_T) tipoSel = null;
   render();
+}
+// Quien no tiene permiso no recibe estos datos: ni pestaña ni mencion.
+if(ALF.length){
+  const p0 = document.querySelector("section.first .shead p");
+  p0.textContent = p0.textContent.replace("Call o Sala", "Call, Sala o Alcance");
 }
 if(SC){
   document.querySelector("h1").textContent = "Leads de Call por sociedad";
