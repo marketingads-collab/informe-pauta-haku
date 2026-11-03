@@ -970,7 +970,7 @@ function renderTabla(){
 
 // Tabla de Alcance: sociedad > campaña (> zona si la campaña tiene varias).
 // Sin leads: inversion, impresiones, personas alcanzadas, frecuencia, CPM, clics y CTR.
-// La flecha compara el CPM (costo por mil impresiones) con los mismos dias justo antes.
+// La flecha compara el alcance (personas) con los mismos dias justo antes: subir es bueno.
 const alAb = new Set();              // campañas desplegadas en sus zonas
 function renderAlcance(filas){
   const pa=periodoAnterior(R1), ant = pa.h>=F_MIN ? alEnRango(pa) : [];
@@ -984,11 +984,11 @@ function renderAlcance(filas){
     })).sort(orden==="cpl" ? porInv : (x,y)=>D.al_c[x.c].localeCompare(D.al_c[y.c],"es",{numeric:true}))
   })).sort(orden==="cpl" ? porInv : (x,y)=>x.nom.localeCompare(y.nom,"es"));
 
-  const titAnt = `CPM contra ${fmtRango(pa.d,pa.h)}`;
+  const titAnt = `Alcance contra ${fmtRango(pa.d,pa.h)}`;
   document.querySelector("#tbl thead").innerHTML =
     `<tr><th class="l">Sociedad · campaña</th><th class="num">Inversión</th><th class="num">Impresiones</th>
      <th class="num" title="personas únicas">Alcance</th><th class="num">Frec.</th><th class="num" title="costo por mil impresiones">CPM</th>
-     <th class="num">Clics</th><th class="num">CTR</th><th class="num" title="${titAnt}">CPM vs. ant.</th></tr>`;
+     <th class="num">Clics</th><th class="num">CTR</th><th class="num" title="${titAnt}">Alcance vs. ant.</th></tr>`;
   const dec = v => v.toLocaleString("es-CO",{minimumFractionDigits:2,maximumFractionDigits:2});
   // aprox: arriba de una zona el alcance es suma de personas unicas (puede repetir gente)
   const celdas = (a, an, aprox) => {
@@ -997,7 +997,7 @@ function renderAlcance(filas){
     return `<td class="num">${pesos(a.cost)}</td><td class="num">${miles(m[0])}</td>`
       + `<td class="num">${ap}${miles(m[1])}</td><td class="num">${ap}${dec(m[3]/100)}</td>`
       + `<td class="num">${cpm?pesos(cpm):"—"}</td><td class="num">${miles(m[2])}</td>`
-      + `<td class="num">${ap}${dec(m[4]/100)}%</td><td class="num">${deltaHtml(cpm, cpmDe(an))}</td>`;
+      + `<td class="num">${ap}${dec(m[4]/100)}%</td><td class="num">${deltaHtml(m[1], an ? an.alc : null, true)}</td>`;
   };
   const html = socs.map(s=>{
     const ab=abiertas.has(s.e), n=s.camps.length;
