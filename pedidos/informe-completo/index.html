@@ -505,6 +505,9 @@ const D = (window.parent.__INFORME_COMPLETO__ || {d:[],fechas:[],empresas:[],zon
 // Modo "solo Call, sin costos" (pestaña Informe de Solicitud de leads): el payload
 // llega sin ningun dato de inversion, asi que aqui solo se ajustan textos y columnas.
 const SC = !!D.sinCosto;
+// Version comunidad (usuario comunitys): sin costos como la del call, pero con Call, Sala y
+// Alcance, y con todos los anuncios activos aunque no hayan traido leads.
+const CM = !!D.comunidad;
 const MES = ["","Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 const MES3 = ["","Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
 const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
@@ -764,6 +767,8 @@ let vista = "resultados";            // "resultados" | "entrega"
 // ---------- top de anuncios (sociedad o zona, fechas y pestaña elegidas) ----------
 // D.ad = [fecha, sociedad, zona, tipo, anuncio, leads, conjunto (-1 si la zona tiene uno solo)]; D.an = [nombre, formato, activo, miniatura, link, pagina]
 const AD = (D.ad||[]).map(r=>({f:D.fechas[r[0]], e:r[1], z:r[2], t:r[3], a:r[4], l:r[5], cj:r[6]??-1}));
+// D.aa (solo version comunidad) = [sociedad, zona, tipo, anuncio, conjunto]: anuncios activos hoy
+const AA = (D.aa||[]).map(r=>({e:r[0], z:r[1], t:r[2], a:r[3], cj:r[4]??-1}));
 const adAb = new Set();
 function topAds(e, z, n=3, cj=null){
   const k = grupoInf ? GRUPOS_INF[grupoInf] : null;
@@ -771,20 +776,24 @@ function topAds(e, z, n=3, cj=null){
   const por = new Map(); let tot = 0;
   fs.forEach(r=>{ por.set(r.a,(por.get(r.a)||0)+r.l); tot += r.l; });
   const pag = {}; fs.forEach(r=>{ const p=D.an[r.a][5]; if(p) pag[p]=(pag[p]||0)+r.l; });
-  return {tot, pagina:Object.keys(pag).sort((x,y)=>pag[y]-pag[x])[0]||"",
-          top:[...por].sort((x,y)=>y[1]-x[1]).slice(0,n).map(([a,l])=>({ad:D.an[a], l}))};
+  const top = [...por].sort((x,y)=>y[1]-x[1]).slice(0,n).map(([a,l])=>({ad:D.an[a], l}));
+  // version comunidad: despues de los que trajeron leads, los activos que no trajeron ninguno
+  if(CM){ const ya = new Set(por.keys());
+    AA.filter(r=>r.e===e && r.t===tipoSel && (z==null || r.z===z) && (cj==null || r.cj===cj) && (!k || k.has(r.e+"|"+r.z)) && !ya.has(r.a))
+      .forEach(r=>{ ya.add(r.a); top.push({ad:D.an[r.a], l:0}); const p=D.an[r.a][5]; if(p && !Object.keys(pag).length) pag[p]=0; }); }
+  return {tot, pagina:Object.keys(pag).sort((x,y)=>pag[y]-pag[x])[0]||"", top};
 }
 const escA = t => String(t??"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 function filaAds(e, z, ncol, cj=null){
   // Con el filtro del call de Medellín salen TODOS los anuncios que trajeron leads, no solo 3.
-  const todos = /medell[ií]n/i.test(grupoInf||"");
+  const todos = CM || /medell[ií]n/i.test(grupoInf||"");
   const t = topAds(e, z, todos ? Infinity : 3, cj);
   const lib = t.pagina ? `https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=CO&view_all_page_id=${encodeURIComponent(t.pagina)}&search_type=page&media_type=all` : "";
-  const cab = `<div class="adtit"><span>${cj!=null?"Anuncios de este conjunto":todos?"Anuncios que trajeron leads":"Anuncios que más leads traen"} · ${fmtRango(R1.d,R1.h)}</span>${lib?`<a href="${escA(lib)}" target="_blank" rel="noopener">Ver todos los anuncios activos de la sociedad ↗</a>`:""}</div>`;
-  const cuerpo = !t.top.length ? `<div class="adsvac">No trajo leads en estas fechas.</div>`
+  const cab = `<div class="adtit"><span>${cj!=null?"Anuncios de este conjunto":CM?"Anuncios activos y los que trajeron leads":todos?"Anuncios que trajeron leads":"Anuncios que más leads traen"} · ${fmtRango(R1.d,R1.h)}</span>${lib?`<a href="${escA(lib)}" target="_blank" rel="noopener">Ver todos los anuncios activos de la sociedad ↗</a>`:""}</div>`;
+  const cuerpo = !t.top.length ? `<div class="adsvac">${CM?"No tiene anuncios activos ni trajo leads en estas fechas.":"No trajo leads en estas fechas."}</div>`
     : `<div class="adg">${t.top.map((x,i)=>{ const [nom,fmt,act,mini,ver]=x.ad; const pct=t.tot?Math.round(x.l/t.tot*100):0;
         return `<div class="adc">${mini?`<img src="${escA(mini)}" alt="" loading="lazy" referrerpolicy="no-referrer">`:""}
-          <div class="t"><span class="n">#${i+1} · ${miles(x.l)}<small>leads · ${pct}%</small></span>
+          <div class="t">${x.l>0 ? `<span class="n">#${i+1} · ${miles(x.l)}<small>leads · ${pct}%</small></span>` : `<span class="n">0<small>leads en estas fechas</small></span>`}
           <span class="fl">${escA(fmt)}</span>${act?"":`<span class="fl off">Ya no está activo</span>`}
           <span class="nm" title="${escA(nom)}">${escA(nom)}</span>
           ${ver?`<a href="${escA(ver)}" target="_blank" rel="noopener">Ver anuncio ↗</a>`:""}</div></div>`; }).join("")}</div>`;
@@ -807,18 +816,19 @@ function renderTabla(){
   const porTipo=sumar(filas, r=>r.t);
   const disp=[...porTipo].filter(([,a])=>a.l>0).map(([t])=>t)
     .sort((a,b)=>D.tipos[a].localeCompare(D.tipos[b],"es"));
-  const alF = (!SC && !grupoInf) ? alEnRango(R1) : [];
-  const alInv = alF.reduce((a,r)=>a+r.cost,0);
-  if(alInv>0) disp.push(AL_T);
+  const alF = ((!SC || CM) && !grupoInf) ? alEnRango(R1) : [];
+  // sin costos (comunidad) la inversion llega en 0: cuenta lo que tuvo impresiones
+  const vivoAl = r => r.cost>0 || (CM && r.imp>0);
+  if(alF.some(vivoAl)) disp.push(AL_T);
   if(!disp.includes(tipoSel)) tipoSel = disp[0] ?? null;
   // campañas de verdad: "Alcance Octubre" de dos sociedades son dos campañas
-  const alCamp = new Set(alF.filter(r=>r.cost>0).map(r=>r.e+"|"+r.c)).size;
+  const alCamp = new Set(alF.filter(vivoAl).map(r=>r.e+"|"+r.c)).size;
   pintarTabs(disp, porTipo, alCamp);
   const esAl = tipoSel===AL_T;
   document.getElementById("vRes").closest(".tacts").hidden = esAl;
-  document.getElementById("ordCpl").textContent = esAl ? "Más inversión" : SC ? "Más leads" : "Costo por lead";
+  document.getElementById("ordCpl").textContent = esAl ? (CM ? "Más alcance" : "Más inversión") : SC ? "Más leads" : "Costo por lead";
   if(esAl){
-    document.getElementById("tabHelp").textContent = "Campañas para que más gente conozca la marca o la sala (alcance, reconocimiento, tráfico, ferias). No buscan leads: aquí se mira a cuántas personas llegaron y cuánto costó. No entran en el costo por lead de Call ni de Sala.";
+    document.getElementById("tabHelp").textContent = `Campañas para que más gente conozca la marca o la sala (alcance, reconocimiento, tráfico, ferias). No buscan leads: aquí se mira a cuántas personas llegaron${CM?"":" y cuánto costó"}. No entran en el costo por lead de Call ni de Sala.`;
     renderAlcance(alF); return;
   }
   const ayuda={"Call":"Leads que entran al call center.",
@@ -935,7 +945,7 @@ function renderTabla(){
               : barra(c.c) + (SC ? "" : `<td class="num">${c.c?pesos(c.c):"—"}</td>`)
                            + `<td class="num">${miles(c.l)}${unidad(z.ca)}</td>`
                            + `<td class="num">${deltaHtml(c.c,c.cp,SC)}</td>`}
-      ${AD.length ? (AD.some(r=>r.cj===c.cj) ? btnAd("c"+c.cj) : "<td></td>") : ""}</tr>`;
+      ${AD.length ? (AD.some(r=>r.cj===c.cj) || AA.some(r=>r.cj===c.cj) ? btnAd("c"+c.cj) : "<td></td>") : ""}</tr>`;
         if(adAb.has("c"+c.cj)) out += filaAds(s.e, z.z, NCOL, c.cj); });
     });
     return out;
@@ -985,31 +995,32 @@ function renderAlcance(filas){
   const pa=periodoAnterior(R1), ant = pa.h>=F_MIN ? alEnRango(pa) : [];
   const S=sumar(filas, r=>r.e), C=sumar(filas, r=>r.e+"|"+r.c), Z=sumar(filas, r=>r.e+"|"+r.c+"|"+r.z);
   const SA=sumar(ant, r=>r.e), CA=sumar(ant, r=>r.e+"|"+r.c), ZA=sumar(ant, r=>r.e+"|"+r.c+"|"+r.z);
-  const porInv=(a,b)=>b.a.cost-a.a.cost;
+  const porInv = CM ? (a,b)=>b.a.alc-a.a.alc : (a,b)=>b.a.cost-a.a.cost;
+  const vivo = a => a.cost>0 || (CM && a.imp>0);
   const kA=r=>r.e+"|"+r.c+"|"+r.z+"|"+r.a;
   const AN=sumar(alaEnRango(R1), kA), ANA=sumar(pa.h>=F_MIN ? alaEnRango(pa) : [], kA);
   const anunciosDe = kz => [...AN].filter(([k,a])=>k.startsWith(kz+"|") && (a.cost>0 || a.imp>0))
     .map(([k,a])=>({an:+k.split("|")[3], a, ant:ANA.get(k)})).sort(porInv);
-  const socs=[...S].filter(([,a])=>a.cost>0).map(([e,a])=>({e, nom:D.al_e[e], a, ant:SA.get(e),
-    camps:[...C].filter(([k,c])=>+k.split("|")[0]===e && c.cost>0).map(([k,c])=>({k, c:+k.split("|")[1], a:c, ant:CA.get(k),
-      zonas:[...Z].filter(([kk,z])=>kk.startsWith(k+"|") && z.cost>0).map(([kk,z])=>({z:+kk.split("|")[2], k:kk, a:z, ant:ZA.get(kk), ads:anunciosDe(kk)}))
+  const socs=[...S].filter(([,a])=>vivo(a)).map(([e,a])=>({e, nom:D.al_e[e], a, ant:SA.get(e),
+    camps:[...C].filter(([k,c])=>+k.split("|")[0]===e && vivo(c)).map(([k,c])=>({k, c:+k.split("|")[1], a:c, ant:CA.get(k),
+      zonas:[...Z].filter(([kk,z])=>kk.startsWith(k+"|") && vivo(z)).map(([kk,z])=>({z:+kk.split("|")[2], k:kk, a:z, ant:ZA.get(kk), ads:anunciosDe(kk)}))
         .sort(orden==="cpl" ? porInv : (x,y)=>D.al_z[x.z].localeCompare(D.al_z[y.z],"es"))
     })).sort(orden==="cpl" ? porInv : (x,y)=>D.al_c[x.c].localeCompare(D.al_c[y.c],"es",{numeric:true}))
   })).sort(orden==="cpl" ? porInv : (x,y)=>x.nom.localeCompare(y.nom,"es"));
 
   const titAnt = `Alcance contra ${fmtRango(pa.d,pa.h)}`;
   document.querySelector("#tbl thead").innerHTML =
-    `<tr><th class="l">Sociedad · campaña</th><th class="num">Inversión</th><th class="num">Impresiones</th>
-     <th class="num" title="personas únicas">Alcance</th><th class="num">Frec.</th><th class="num" title="costo por mil impresiones">CPM</th>
+    `<tr><th class="l">Sociedad · campaña</th>${CM?"":`<th class="num">Inversión</th>`}<th class="num">Impresiones</th>
+     <th class="num" title="personas únicas">Alcance</th><th class="num">Frec.</th>${CM?"":`<th class="num" title="costo por mil impresiones">CPM</th>`}
      <th class="num" title="${titAnt}">Alcance vs. ant.</th></tr>`;
   const dec = v => v.toLocaleString("es-CO",{minimumFractionDigits:2,maximumFractionDigits:2});
   // aprox: arriba de una zona el alcance es suma de personas unicas (puede repetir gente)
   const celdas = (a, an, aprox) => {
     const m=metDe(a), ap = aprox ? '<span class="aprox" title="suma de zonas o campañas: puede contar dos veces a la misma persona">~</span>' : "";
     const cpm=cpmDe(a);
-    return `<td class="num">${pesos(a.cost)}</td><td class="num">${miles(m[0])}</td>`
+    return (CM?"":`<td class="num">${pesos(a.cost)}</td>`) + `<td class="num">${miles(m[0])}</td>`
       + `<td class="num">${ap}${miles(m[1])}</td><td class="num">${ap}${dec(m[3]/100)}</td>`
-      + `<td class="num">${cpm?pesos(cpm):"—"}</td><td class="num">${deltaHtml(m[1], an ? an.alc : null, true)}</td>`;
+      + (CM?"":`<td class="num">${cpm?pesos(cpm):"—"}</td>`) + `<td class="num">${deltaHtml(m[1], an ? an.alc : null, true)}</td>`;
   };
   const html = socs.map(s=>{
     const ab=abiertas.has(s.e), n=s.camps.length;
@@ -1035,7 +1046,7 @@ function renderAlcance(filas){
   const tot=sumar(filas, ()=>0).get(0);
   document.querySelector("#tbl tbody").innerHTML = html
     ? html + `<tr class="soc"><td class="l"><b>Total alcance</b></td>${celdas(tot, sumar(ant, ()=>0).get(0), true)}</tr>`
-    : `<tr><td colspan="7" class="l" style="color:var(--ink-3);padding:22px 12px">Sin campañas de alcance en estas fechas.</td></tr>`;
+    : `<tr><td colspan="${CM?5:7}" class="l" style="color:var(--ink-3);padding:22px 12px">Sin campañas de alcance en estas fechas.</td></tr>`;
 
   document.querySelectorAll("#tbl .zdis").forEach(b=>{
     b.onclick=()=>{ const k=b.dataset.k; alAb.has(k)?alAb.delete(k):alAb.add(k); renderTabla(); };
@@ -1335,7 +1346,7 @@ function renderMini(){
 function renderAnio(){
   const tp = tipoSel==null ? null : D.tipos[tipoSel];
   document.getElementById("anioSub").textContent = tp
-    ? (SC ? "Leads de Call mes a mes de la sociedad elegida. Toca una segunda para comparar."
+    ? (SC && !CM ? "Leads de Call mes a mes de la sociedad elegida. Toca una segunda para comparar."
           : `Mes a mes de la sociedad elegida, separando Call y Sala. Toca una segunda para comparar. La tabla muestra ${tp}, según la pestaña de arriba.`)
     : "Sin datos en estas fechas.";
   const th=document.querySelector("#tblAnio thead"), tb=document.querySelector("#tblAnio tbody");
@@ -1395,21 +1406,24 @@ function renderAnio(){
 
 // Mes a mes de la inversion en Alcance por sociedad (la grafica de arriba sigue siendo de leads).
 function renderAnioAlcance(th, tb){
-  document.getElementById("anioSub").textContent =
-    "La gráfica muestra leads de Call y Sala. La tabla muestra la inversión en campañas de Alcance, según la pestaña de arriba.";
-  const MS=mesesDe(R3), M={};
+  // version comunidad (sin costos): personas alcanzadas en vez de inversion
+  document.getElementById("anioSub").textContent = CM
+    ? "La gráfica muestra leads de Call y Sala. La tabla muestra las personas alcanzadas por las campañas de Alcance (suma de días: puede repetir personas)."
+    : "La gráfica muestra leads de Call y Sala. La tabla muestra la inversión en campañas de Alcance, según la pestaña de arriba.";
+  const MS=mesesDe(R3), M={}, fmtV = CM ? miles : pesos;
   sumar(alEnRango(R3), r=>r.e+"|"+r.f.slice(0,7)).forEach((a,k)=>{
-    if(a.cost<=0) return; const [e,ym]=k.split("|"); (M[e]=M[e]||{})[ym]=a.cost; });
+    const v = CM ? a.alc : a.cost;
+    if(v<=0) return; const [e,ym]=k.split("|"); (M[e]=M[e]||{})[ym]=v; });
   const socs=Object.keys(M).map(Number).sort((a,b)=>D.al_e[a].localeCompare(D.al_e[b],"es"));
   if(!socs.length){ th.innerHTML=""; tb.innerHTML=`<tr><td class="l" style="color:var(--ink-3);padding:22px 12px">Sin campañas de alcance en estas fechas.</td></tr>`; return; }
-  th.innerHTML = `<tr><th class="l">Sociedad · inversión en alcance</th>`
+  th.innerHTML = `<tr><th class="l">Sociedad · ${CM?"personas alcanzadas":"inversión en alcance"}</th>`
     + MS.map(ym=>`<th class="num">${mesCorto(ym,MS)}</th>`).join("") + `<th class="num tot">Total</th></tr>`;
   const vals=socs.flatMap(e=>Object.values(M[e])).sort((a,b)=>a-b);
   const tope=vals[Math.min(vals.length-1,Math.floor(vals.length*0.9))] || 1;
   const celda=v=> v==null ? `<td class="num vac">·</td>`
-    : `<td class="num heat" style="background:color-mix(in srgb, var(--serie-3) ${(Math.min(1,v/tope)*42).toFixed(0)}%, transparent)">${pesos(v)}</td>`;
+    : `<td class="num heat" style="background:color-mix(in srgb, var(--serie-3) ${(Math.min(1,v/tope)*42).toFixed(0)}%, transparent)">${fmtV(v)}</td>`;
   tb.innerHTML = socs.map(e=>`<tr><td class="l">${D.al_e[e]}</td>${MS.map(ym=>celda(M[e][ym])).join("")}`
-    + `<td class="num tot">${pesos(Object.values(M[e]).reduce((a,b)=>a+b,0))}</td></tr>`).join("");
+    + `<td class="num tot">${fmtV(Object.values(M[e]).reduce((a,b)=>a+b,0))}</td></tr>`).join("");
 }
 
 // ---------- exportar a Excel ----------
@@ -1452,22 +1466,25 @@ function filasDatos(conFecha){
 function nombreArchivo(ext){ return `pauta-haku-${R1.d}_a_${R1.h}.${ext}`; }
 
 // Excel de la pestaña Alcance: sus propias columnas (no hay leads ni CPL).
-const CAB_AL = ["Fecha","Sociedad","Campaña","Zona","Inversión","Impresiones","Alcance","Frecuencia","CPM"];
+const CAB_AL0 = ["Fecha","Sociedad","Campaña","Zona","Inversión","Impresiones","Alcance","Frecuencia","CPM"];
+// version comunidad: sin Inversión ni CPM
+const SIN_AL = CM ? new Set([4, 8]) : new Set();
+const CAB_AL = CAB_AL0.filter((_,i)=>!SIN_AL.has(i));
 function filasAlcance(conFecha){
-  return alEnRango(R1).map(r=>{ const [imp,alc,,fre]=metDe(r), [y,m,d]=r.f.split("-").map(Number);
-    return [conFecha ? new Date(y,m-1,d) : r.f, D.al_e[r.e], D.al_c[r.c], D.al_z[r.z], Math.round(r.cost), imp, alc, fre/100, cpmDe(r)]; });
+  return alEnRango(R1).filter(r=>r.cost>0 || r.imp>0).map(r=>{ const [imp,alc,,fre]=metDe(r), [y,m,d]=r.f.split("-").map(Number);
+    return [conFecha ? new Date(y,m-1,d) : r.f, D.al_e[r.e], D.al_c[r.c], D.al_z[r.z], Math.round(r.cost), imp, alc, fre/100, cpmDe(r)].filter((_,i)=>!SIN_AL.has(i)); });
 }
 async function descargarExcel(){
   const XLSX = await cargarXlsx();
   if(tipoSel===AL_T){
     const datos=filasAlcance(true), ws=XLSX.utils.aoa_to_sheet([CAB_AL, ...datos]);
-    ws["!cols"]=[11,22,30,20,12,12,11,11,10].map(w=>({wch:w}));
+    ws["!cols"]=[11,22,30,20,12,12,11,11,10].filter((_,i)=>!SIN_AL.has(i)).map(w=>({wch:w}));
     ws["!autofilter"]={ref: XLSX.utils.encode_range({s:{r:0,c:0}, e:{r:datos.length, c:CAB_AL.length-1}})};
-    const Z=["yyyy-mm-dd",null,null,null,'"$"#,##0',"#,##0","#,##0","0.00",'"$"#,##0'];
+    const Z=["yyyy-mm-dd",null,null,null,'"$"#,##0',"#,##0","#,##0","0.00",'"$"#,##0'].filter((_,i)=>!SIN_AL.has(i));
     datos.forEach((_,i)=>Z.forEach((z,c)=>{ const cel=ws[XLSX.utils.encode_cell({r:i+1,c})]; if(z && cel && cel.t==="n") cel.z=z; }));
     const leeme=XLSX.utils.aoa_to_sheet([["Campañas de alcance — Haku"],[],["Fechas", fmtRango(R1.d,R1.h)],["Datos hasta", D.hasta],
       ["Qué son","Campañas de alcance, reconocimiento, tráfico y ferias. No buscan leads, por eso no tienen CPL."],
-      ["CPM","Costo por cada mil impresiones."],
+      ...(CM ? [] : [["CPM","Costo por cada mil impresiones."]]),
       ["OJO con el Alcance","Son personas únicas por día. Al sumar varios días o zonas se cuenta dos veces a la misma persona."]]);
     leeme["!cols"]=[{wch:22},{wch:96}];
     const wb=XLSX.utils.book_new();
@@ -1498,7 +1515,7 @@ async function descargarExcel(){
     [],
     ["Fechas", fmtRango(R1.d, R1.h)],
     ["Datos hasta", D.hasta],
-    ["Fuente", SC ? "Meta Marketing API · campañas de Call" : "Meta Marketing API · campañas de captación (Call y Sala)"],
+    ["Fuente", SC && !CM ? "Meta Marketing API · campañas de Call" : "Meta Marketing API · campañas de captación (Call y Sala)"],
     [],
     ["Filas", "Una por día, sociedad, zona, tipo y canal."],
     ["Tipo", "Call = lead que entra al call center · Sala = lead que llega a la sala de ventas"],
@@ -1579,7 +1596,13 @@ if(ALF.length){
   const p0 = document.querySelector("section.first .shead p");
   p0.textContent = p0.textContent.replace("Call o Sala", "Call, Sala o Alcance");
 }
-if(SC){
+if(CM){
+  document.querySelector(".sub").textContent = "Cuántos leads entran en cada zona de cada sociedad, y a cuántas personas llegan las campañas de Alcance. Los datos salen directo de Meta.";
+  document.querySelector("section.first .shead p").textContent =
+    "Elige Call, Sala o Alcance en las pestañas y toca una sociedad para ver sus zonas. La flecha compara los leads contra los mismos días justo antes de las fechas elegidas. En Anuncios salen todos los activos, aunque no hayan traído leads.";
+  document.getElementById("ordCpl").textContent = "Más leads";
+  document.getElementById("anCpl").closest(".tbar").hidden = true;
+} else if(SC){
   document.querySelector("h1").textContent = "Leads de Call por sociedad";
   document.querySelector(".sub").textContent = "Cuántos leads de Call entran en cada zona de cada sociedad. Los datos salen directo de Meta.";
   document.querySelector("section.first .shead p").textContent =
