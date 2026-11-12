@@ -508,6 +508,9 @@ const SC = !!D.sinCosto;
 // Version comunidad (usuario comunitys): sin costos como la del call, pero con Call, Sala y
 // Alcance, y con todos los anuncios activos aunque no hayan traido leads.
 const CM = !!D.comunidad;
+// Todos los anuncios (activos en 0 incluidos): version comunidad, o quien tiene todos_anuncios
+// (Felipe): la pagina de Solicitud que contiene el informe lo avisa.
+const TODOS_AN = CM || (()=>{ try{ return !!window.parent.__TODOS_ANUNCIOS__; }catch(e){ return false; } })();
 const MES = ["","Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 const MES3 = ["","Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
 const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
@@ -778,7 +781,7 @@ function topAds(e, z, n=3, cj=null){
   const pag = {}; fs.forEach(r=>{ const p=D.an[r.a][5]; if(p) pag[p]=(pag[p]||0)+r.l; });
   const top = [...por].sort((x,y)=>y[1]-x[1]).slice(0,n).map(([a,l])=>({ad:D.an[a], l}));
   // version comunidad: despues de los que trajeron leads, los activos que no trajeron ninguno
-  if(CM){ const ya = new Set(por.keys());
+  if(TODOS_AN){ const ya = new Set(por.keys());
     AA.filter(r=>r.e===e && r.t===tipoSel && (z==null || r.z===z) && (cj==null || r.cj===cj) && (!k || k.has(r.e+"|"+r.z)) && !ya.has(r.a))
       .forEach(r=>{ ya.add(r.a); top.push({ad:D.an[r.a], l:0}); const p=D.an[r.a][5]; if(p && !Object.keys(pag).length) pag[p]=0; }); }
   return {tot, pagina:Object.keys(pag).sort((x,y)=>pag[y]-pag[x])[0]||"", top};
@@ -786,11 +789,11 @@ function topAds(e, z, n=3, cj=null){
 const escA = t => String(t??"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 function filaAds(e, z, ncol, cj=null){
   // Con el filtro del call de Medellín salen TODOS los anuncios que trajeron leads, no solo 3.
-  const todos = CM || /medell[ií]n/i.test(grupoInf||"");
+  const todos = TODOS_AN || /medell[ií]n/i.test(grupoInf||"");
   const t = topAds(e, z, todos ? Infinity : 3, cj);
   const lib = t.pagina ? `https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=CO&view_all_page_id=${encodeURIComponent(t.pagina)}&search_type=page&media_type=all` : "";
-  const cab = `<div class="adtit"><span>${cj!=null?"Anuncios de este conjunto":CM?"Anuncios activos y los que trajeron leads":todos?"Anuncios que trajeron leads":"Anuncios que más leads traen"} · ${fmtRango(R1.d,R1.h)}</span>${lib?`<a href="${escA(lib)}" target="_blank" rel="noopener">Ver todos los anuncios activos de la sociedad ↗</a>`:""}</div>`;
-  const cuerpo = !t.top.length ? `<div class="adsvac">${CM?"No tiene anuncios activos ni trajo leads en estas fechas.":"No trajo leads en estas fechas."}</div>`
+  const cab = `<div class="adtit"><span>${cj!=null?"Anuncios de este conjunto":TODOS_AN?"Anuncios activos y los que trajeron leads":todos?"Anuncios que trajeron leads":"Anuncios que más leads traen"} · ${fmtRango(R1.d,R1.h)}</span>${lib?`<a href="${escA(lib)}" target="_blank" rel="noopener">Ver todos los anuncios activos de la sociedad ↗</a>`:""}</div>`;
+  const cuerpo = !t.top.length ? `<div class="adsvac">${TODOS_AN?"No tiene anuncios activos ni trajo leads en estas fechas.":"No trajo leads en estas fechas."}</div>`
     : `<div class="adg">${t.top.map((x,i)=>{ const [nom,fmt,act,mini,ver]=x.ad; const pct=t.tot?Math.round(x.l/t.tot*100):0;
         return `<div class="adc">${mini?`<img src="${escA(mini)}" alt="" loading="lazy" referrerpolicy="no-referrer">`:""}
           <div class="t">${x.l>0 ? `<span class="n">#${i+1} · ${miles(x.l)}<small>leads · ${pct}%</small></span>` : `<span class="n">0<small>leads en estas fechas</small></span>`}
@@ -945,7 +948,7 @@ function renderTabla(){
               : barra(c.c) + (SC ? "" : `<td class="num">${c.c?pesos(c.c):"—"}</td>`)
                            + `<td class="num">${miles(c.l)}${unidad(z.ca)}</td>`
                            + `<td class="num">${deltaHtml(c.c,c.cp,SC)}</td>`}
-      ${AD.length ? (AD.some(r=>r.cj===c.cj) || AA.some(r=>r.cj===c.cj) ? btnAd("c"+c.cj) : "<td></td>") : ""}</tr>`;
+      ${AD.length ? (AD.some(r=>r.cj===c.cj) || (TODOS_AN && AA.some(r=>r.cj===c.cj)) ? btnAd("c"+c.cj) : "<td></td>") : ""}</tr>`;
         if(adAb.has("c"+c.cj)) out += filaAds(s.e, z.z, NCOL, c.cj); });
     });
     return out;
