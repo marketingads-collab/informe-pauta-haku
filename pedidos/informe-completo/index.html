@@ -250,6 +250,15 @@ tr.cjr{background:var(--surface-2)}
 tr.cjr > td{padding-top:4px; padding-bottom:4px; font-size:12.5px}
 tr.cjr .bar i{opacity:.3; height:5px}
 .cjn{padding-left:66px!important; color:var(--ink-2)}
+/* marca > sociedad (solo Felipe y Community): la sociedad baja un nivel */
+tr.mar{cursor:pointer; border-top:1px solid var(--line); background:var(--surface)}
+tr.mar td{font-weight:700}
+tr.mar.open .chev{transform:rotate(90deg); color:var(--accent)}
+#tbl.conmar tr.soc{background:var(--surface-2)}
+#tbl.conmar tr.soc > td:first-child{padding-left:30px}
+#tbl.conmar .zname{padding-left:66px!important}
+#tbl.conmar .zname::before{left:48px}
+#tbl.conmar .cjn{padding-left:86px!important}
 .cjn b{font-weight:500}
 .cjn small{display:block; font-family:var(--font-m); font-size:10px; color:var(--ink-3);
   overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:260px}
@@ -744,6 +753,15 @@ const R2 = R1, R3 = R1;
 const SELECTORES = [...document.querySelectorAll("[data-rango]")].map(el=>
   crearRango(el, R1, ()=>{ SELECTORES.forEach(s=>s.etiqueta()); abiertas.clear(); render(); }));
 const abiertas = new Set();          // sociedades desplegadas
+// Marca de moto de cada sociedad (tabla de Haku, 12-nov). Solo Felipe y Community (TODOS_AN)
+// ven el primer nivel por marca: marca > sociedad > zona > anuncio.
+const MARCA_SOC = {"motosdelosandes":"Hero","sabanamotos":"Bajaj","motomovil":"Suzuki","credimovil":"Bajaj",
+  "credimotos":"Honda","aburramotos":"Bajaj","motoracing":"AKT","motocredito":"Suzuki","motosdeldarien":"Auteco",
+  "movimotos":"Auteco","centromotos":"Auteco","motosdelacapital":"Auteco","todomovil":"Auteco"};
+const POR_MARCA = TODOS_AN;
+const SIN_MARCA = "Otras sociedades";
+const marcaDe = e => MARCA_SOC[canonJ(D.empresas[e].replace(/ Medell[ií]n$/,""))] || SIN_MARCA;
+const marAb = new Set();             // marcas desplegadas
 const zAb = new Set();               // zonas desplegadas en sus conjuntos
 // "META_PF_SanJoseGuaviare_Asesor1_Motomovil_Wpp" -> "Asesor 1": se quitan prefijo,
 // zona, sociedad y sufijos; lo que queda es lo que distingue al conjunto.
@@ -832,6 +850,7 @@ function renderTabla(){
   document.getElementById("ordCpl").textContent = esAl ? (CM ? "Más alcance" : "Más inversión") : SC ? "Más leads" : "Costo por lead";
   if(esAl){
     document.getElementById("tabHelp").textContent = `Campañas para que más gente conozca la marca o la sala (alcance, reconocimiento, tráfico, ferias). No buscan leads: aquí se mira a cuántas personas llegaron${CM?"":" y cuánto costó"}. No entran en el costo por lead de Call ni de Sala.`;
+    document.getElementById("tbl").classList.remove("conmar");
     renderAlcance(alF); return;
   }
   const ayuda={"Call":"Leads que entran al call center.",
@@ -879,12 +898,12 @@ function renderTabla(){
   const ENT = vista==="entrega";
   const titAnt = `Contra ${fmtRango(pa.d,pa.h)}`;
   document.querySelector("#tbl thead").innerHTML = ENT
-    ? `<tr><th class="l">Sociedad · zona</th><th class="l">Canal</th>
+    ? `<tr><th class="l">${POR_MARCA?"Marca · sociedad · zona":"Sociedad · zona"}</th><th class="l">Canal</th>
         <th class="num">Impresiones</th><th class="num">Alcance</th><th class="num">Frec.</th>
         <th class="num">Clics</th><th class="num">CTR</th><th class="num">Leads</th></tr>`
-    : SC ? `<tr><th class="l">Sociedad · zona</th><th class="l">Canal</th><th class="l"></th>
+    : SC ? `<tr><th class="l">${POR_MARCA?"Marca · sociedad · zona":"Sociedad · zona"}</th><th class="l">Canal</th><th class="l"></th>
         <th class="num">Leads</th><th class="num" title="${titAnt}">vs. período ant.</th></tr>`
-    : `<tr><th class="l">Sociedad · zona</th><th class="l">Canal</th><th class="l">Costo por lead</th>
+    : `<tr><th class="l">${POR_MARCA?"Marca · sociedad · zona":"Sociedad · zona"}</th><th class="l">Canal</th><th class="l">Costo por lead</th>
         <th class="num">CPL</th><th class="num">Leads</th><th class="num" title="${titAnt}">vs. período ant.</th></tr>`;
 
   if(AD.length) document.querySelector("#tbl thead tr").insertAdjacentHTML("beforeend", "<th></th>");
@@ -900,7 +919,7 @@ function renderTabla(){
          + `<td class="num">${ap}${(m[4]/100).toLocaleString("es-CO",{minimumFractionDigits:2,maximumFractionDigits:2})}%</td>`;
   };
 
-  const html=socs.map(s=>{
+  const socHtml = s=>{
     const ab=abiertas.has(s.e), n=s.zonas.length;
     let out=`
       <tr class="soc${ab?" open":""}" data-soc="${s.e}">
@@ -952,7 +971,43 @@ function renderTabla(){
         if(adAb.has("c"+c.cj)) out += filaAds(s.e, z.z, NCOL, c.cj); });
     });
     return out;
-  }).join("");
+  };
+
+  // Felipe y Community: primer nivel por marca de moto (Hero, Bajaj, Suzuki...)
+  let marcas = [];
+  if(POR_MARCA){
+    const marA=sumar(deTipo(filas), r=>marcaDe(r.e)), antM=sumar(deTipo(filasAnt), r=>marcaDe(r.e));
+    const grupos=new Map();
+    socs.forEach(s=>{ const m=marcaDe(s.e); if(!grupos.has(m)) grupos.set(m, []); grupos.get(m).push(s); });
+    marcas=[...grupos].map(([m,ss])=>{ const a=marA.get(m);
+      return {m, socs:ss, l:a.l, c:val(a), mt:metDe(a), cp:val(antM.get(m)),
+              zonas:ss.flatMap(s=>s.zonas), wa:ss.every(s=>s.wa)}; })
+      .sort((a,b)=> a.m===SIN_MARCA ? 1 : b.m===SIN_MARCA ? -1
+                  : orden==="cpl" ? porCpl(a,b) : a.m.localeCompare(b.m,"es"));
+  }
+  const marHtml = g=>{
+    const ab=marAb.has(g.m), n=g.socs.length;
+    return `
+      <tr class="mar${ab?" open":""}" data-mar="${escA(g.m)}">
+        <td class="l">
+          <button type="button" class="dis" aria-expanded="${ab}">
+            <svg class="chev" viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M6 3.5 L11 8 L6 12.5" fill="none" stroke="currentColor" stroke-width="2.6"
+                stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>${escA(g.m)}</span>
+            <span class="cnt">${n} sociedad${n===1?"":"es"}</span>
+          </button>
+        </td>
+        <td class="l">${canalesDe(g)}</td>
+        ${ENT ? celdasEnt(g.mt, true) + `<td class="num">${miles(g.l)}</td>`
+              : barra(g.c) + (SC ? "" : `<td class="num">${g.c?pesos(g.c):"—"}</td>`)
+                           + `<td class="num">${miles(g.l)}${g.wa?unidad(g.zonas[0].ca):""}</td>`
+                           + `<td class="num">${deltaHtml(g.c,g.cp,SC)}</td>`}
+        ${AD.length ? "<td></td>" : ""}</tr>`
+      + (ab ? g.socs.map(socHtml).join("") : "");
+  };
+  document.getElementById("tbl").classList.toggle("conmar", POR_MARCA);
+  const html = POR_MARCA ? marcas.map(marHtml).join("") : socs.map(socHtml).join("");
 
   document.querySelector("#tbl tbody").innerHTML = html ||
     `<tr><td colspan="8" class="l" style="color:var(--ink-3);padding:22px 12px">Sin leads de ${D.tipos[tipoSel]} en estas fechas.</td></tr>`;
@@ -970,11 +1025,21 @@ function renderTabla(){
       renderTabla();
     };
   });
+  document.querySelectorAll("#tbl .mar .dis").forEach(b=>{
+    b.onclick=()=>{
+      const m=b.closest("tr").dataset.mar;
+      marAb.has(m) ? marAb.delete(m) : marAb.add(m);
+      renderTabla();
+    };
+  });
   const ta=document.getElementById("toggleAll");
-  const todas=socs.length>0 && socs.every(s=>abiertas.has(s.e));
+  const todas=socs.length>0 && socs.every(s=>abiertas.has(s.e)) && (!POR_MARCA || marcas.every(g=>marAb.has(g.m)));
   ta.textContent = todas ? "Cerrar todas" : "Abrir todas";
   ta.setAttribute("aria-pressed", todas);
-  ta.onclick=()=>{ todas ? abiertas.clear() : socs.forEach(s=>abiertas.add(s.e)); renderTabla(); };
+  ta.onclick=()=>{
+    if(todas){ abiertas.clear(); marAb.clear(); }
+    else { socs.forEach(s=>abiertas.add(s.e)); marcas.forEach(g=>marAb.add(g.m)); }
+    renderTabla(); };
 
   const on=document.getElementById("ordNom"), oc=document.getElementById("ordCpl");
   on.setAttribute("aria-pressed", orden==="nombre");
