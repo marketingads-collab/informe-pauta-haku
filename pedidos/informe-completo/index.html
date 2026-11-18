@@ -757,7 +757,7 @@ const abiertas = new Set();          // sociedades desplegadas
 // ven el primer nivel por marca: marca > sociedad > zona > anuncio.
 const MARCA_SOC = {"motosdelosandes":"Hero","motosdelatlantico":"Hero","sabanamotos":"Bajaj","motomovil":"Suzuki","credimovil":"Bajaj",
   "credimotos":"Honda","motowing":"Honda","aburramotos":"Bajaj","motoracing":"AKT","motocredito":"Suzuki","motosdeldarien":"Auteco",
-  "movimotos":"Auteco","centromotos":"Auteco","motosdelacapital":"Auteco","todomovil":"Auteco"};
+  "movimotos":"Auteco","centromotos":"Auteco","motosdelacapital":"Auteco","todomovil":"Hero"};
 const POR_MARCA = TODOS_AN;
 const SIN_MARCA = "Otras sociedades";
 const marcaDe = e => MARCA_SOC[canonJ(D.empresas[e].replace(/ Medell[ií]n$/,""))] || SIN_MARCA;
