@@ -189,6 +189,17 @@ tbody tr:last-child{border-bottom:0}
 tbody tr:hover{background:var(--surface-2)}
 td.num,th.num{font-family:var(--font-m); font-variant-numeric:tabular-nums; letter-spacing:-.02em}
 .bar{position:relative; min-width:104px}
+.cu{display:flex; flex-direction:column; align-items:flex-end; gap:3px; min-width:170px}
+.cu .cl{display:flex; align-items:center; gap:7px}
+.cu .b{position:relative; width:64px; height:7px; border-radius:4px; background:var(--line-soft); overflow:hidden; flex:none}
+.cu .b i{position:absolute; inset:0 auto 0 0; border-radius:4px}
+.cu .b u{position:absolute; top:-2px; bottom:-2px; width:1.5px; background:var(--ink-3); left:calc(100% / 1.3)}
+.cu .pd{font-size:11px; color:var(--ink-3)}
+.sem{font-family:var(--font-m); font-size:10.5px; font-weight:600; padding:2px 7px; border-radius:4px; min-width:70px; text-align:center}
+.sem.bad{background:var(--bad-soft); color:var(--bad)}
+.sem.good{background:var(--good-soft); color:var(--good)}
+.sem.warn{background:var(--warn-soft); color:var(--warn)}
+.sem.na{color:var(--ink-3)}
 .bar i{display:block; height:7px; border-radius:0 3px 3px 0; background:var(--accent); opacity:.85}
 /* la barra se pasa del tope de la escala: se corta en diagonal */
 .bar i.over{border-radius:0; clip-path:polygon(0 0, calc(100% - 5px) 0, 100% 50%, calc(100% - 5px) 100%, 0 100%)}
@@ -824,6 +835,35 @@ const CHEV_AD = `<svg viewBox="0 0 10 10" aria-hidden="true"><path d="M3 1.5 7 5
 const CHEV_Z = `<svg class="chev" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 L11 8 L6 12.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 const btnAd = k => AD.length ? `<td class="adb"><button type="button" class="adbtn" data-k="${k}" aria-expanded="${adAb.has(k)}">Anuncios ${CHEV_AD}</button></td>` : "";
 
+// Cumplimiento de lo que pidieron los calls (solo dentro de Solicitud de leads: la pagina
+// que contiene este informe hace la cuenta con los pedidos y el historial). Devuelve lo
+// pedido y lo que llevamos por zona, sociedad y marca en las fechas elegidas.
+function cumplimientoCalls(){
+  let f; try{ f = window.parent!==window ? window.parent.cumplimientoInforme : null; }catch(e){ return null; }
+  if(typeof f!=="function") return null;
+  const m = f(R1.d, R1.h, grupoInf); if(!m) return null;
+  const ei = new Map(D.empresas.map((n,i)=>[n,i])), zi = new Map(D.zonas.map((n,i)=>[n,i]));
+  const z = new Map(), s = new Map(), mk = new Map();
+  const add = (mp, k, v) => { const o = mp.get(k) || {esp:0, lle:0, rep:false};
+    o.esp += v.esp; o.lle += v.lle; o.rep = o.rep || v.rep; mp.set(k, o); };
+  for(const [k,v] of Object.entries(m)){
+    const i = k.lastIndexOf("|"), en = k.slice(0,i), zn = k.slice(i+1);
+    if(!ei.has(en) || !zi.has(zn)) continue;
+    const e = ei.get(en);
+    add(z, e+"|"+zi.get(zn), v); add(s, e, v); if(POR_MARCA) add(mk, marcaDe(e), v);
+  }
+  return {z, s, m:mk};
+}
+function cumHtml(o){
+  if(!o || !o.esp) return `<span class="sem na">${o && o.lle ? "Sin pedido" : "—"}</span>`;
+  const r = o.lle/o.esp, cls = r < 0.9 ? "bad" : r > 1.1 ? "warn" : "good";
+  const txt = {bad:"Faltan", warn:"Por encima", good:"En meta"}[cls];
+  const w = Math.min(100, r/1.3*100), ap = o.rep ? "≈ " : "";
+  return `<div class="cu"><div class="cl"><span class="num" style="font-size:12.5px">${Math.round(r*100)}%</span>
+    <span class="b" aria-hidden="true"><i style="width:${w}%;background:var(--${cls})"></i><u></u></span>
+    <span class="sem ${cls}">${txt}</span></div>
+    <span class="pd"${o.rep?' title="En zonas que piden dos calls, los leads se reparten según lo que pide cada uno"':""}>Pedido ${miles(o.esp)} · llevamos ${ap}${miles(o.lle)}</span></div>`;
+}
 function renderTabla(){
   const porCpl = SC ? (a,b)=>(b.c??0)-(a.c??0) : (a,b)=>(a.c??Infinity)-(b.c??Infinity);
   const val = a => SC ? (a ? a.l : null) : cplDe(a);
@@ -883,6 +923,26 @@ function renderTabla(){
       }).sort(cmpZona)
     })).sort(cmpSoc);
 
+  // Cumplimiento de lo pedido por los calls (solo pestaña Call, dentro de Solicitud de leads).
+  // Una zona pedida que no trajo ningun lead no sale en la tabla de leads: se agrega en 0,
+  // porque es justo la que no se cumplio.
+  const ENT = vista==="entrega";
+  const CU = !ENT && D.tipos[tipoSel]==="Call" ? cumplimientoCalls() : null;
+  if(CU){
+    const caF = Math.max(0, D.canales.findIndex(c=>/formulario/i.test(c)));
+    for(const [k,o] of CU.z){
+      if(!o.esp) continue;
+      const [e,z] = k.split("|").map(Number);
+      let s = socs.find(x=>x.e===e);
+      if(!s){ s = {e, nom:D.empresas[e], l:0, c:null, m:null, cp:null, zonas:[], cero:true}; socs.push(s); }
+      if(s.zonas.some(x=>x.z===z)) continue;
+      const ca = s.zonas[0]?.ca ?? caF;
+      s.zonas.push({z, ca, k:e+"|"+z+"|"+ca, l:0, c:null, m:null, cp:null, cjs:[], cero:true});
+      s.zonas.sort(cmpZona);
+    }
+    socs.sort(cmpSoc);
+  }
+
   // Escala al percentil 90, no al maximo: una sola zona carisima dejaba todas las
   // demas barras por debajo del 25% del ancho y las volvia ilegibles.
   const vals=socs.flatMap(s=>[s.c, ...s.zonas.map(z=>z.c)]).filter(v=>v>0).sort((a,b)=>a-b);
@@ -895,7 +955,6 @@ function renderTabla(){
     return `<td class="bar"><i class="${c>tope?"over":""}" style="width:${w}%;background:${col}"></i></td>`;
   };
 
-  const ENT = vista==="entrega";
   const titAnt = `Contra ${fmtRango(pa.d,pa.h)}`;
   document.querySelector("#tbl thead").innerHTML = ENT
     ? `<tr><th class="l">${POR_MARCA?"Marca · sociedad · zona":"Sociedad · zona"}</th><th class="l">Canal</th>
@@ -906,6 +965,10 @@ function renderTabla(){
     : `<tr><th class="l">${POR_MARCA?"Marca · sociedad · zona":"Sociedad · zona"}</th><th class="l">Canal</th><th class="l">Costo por lead</th>
         <th class="num">CPL</th><th class="num">Leads</th><th class="num" title="${titAnt}">vs. período ant.</th></tr>`;
 
+  const cuTd = o => CU ? `<td class="num">${cumHtml(o)}</td>` : "";
+  const cuVisto = new Set();          // una zona con dos canales: el cumplimiento va una sola vez
+  if(CU) document.querySelector("#tbl thead tr").insertAdjacentHTML("beforeend",
+    `<th class="num" title="Lo que pidieron los calls en estas fechas contra lo que llevamos">Cumplimiento vs. pedido</th>`);
   if(AD.length) document.querySelector("#tbl thead tr").insertAdjacentHTML("beforeend", "<th></th>");
   const NCOL = document.querySelector("#tbl thead tr").children.length;
   // m = [impresiones, alcance, clics, frecuencia*100, ctr*100]
@@ -936,7 +999,7 @@ function renderTabla(){
         ${ENT ? celdasEnt(s.m, s.zonas.length>1) + `<td class="num">${miles(s.l)}</td>`
               : barra(s.c) + (SC ? "" : `<td class="num">${s.c?pesos(s.c):"—"}</td>`)
                            + `<td class="num">${miles(s.l)}${s.wa?unidad(s.zonas[0].ca):""}</td>`
-                           + `<td class="num">${deltaHtml(s.c,s.cp,SC)}</td>`}
+                           + `<td class="num">${deltaHtml(s.c,s.cp,SC)}</td>` + cuTd(CU?.s.get(s.e))}
       ${btnAd("s"+s.e)}</tr>`;
     if(adAb.has("s"+s.e)) out += filaAds(s.e, null, NCOL);
     if(ab) s.zonas.forEach(z=>{
@@ -951,7 +1014,8 @@ function renderTabla(){
         ${ENT ? celdasEnt(z.m, false) + `<td class="num">${miles(z.l)}</td>`
               : barra(z.c) + (SC ? "" : `<td class="num">${z.c?pesos(z.c):"—"}</td>`)
                            + `<td class="num">${miles(z.l)}${unidad(z.ca)}</td>`
-                           + `<td class="num">${deltaHtml(z.c,z.cp,SC)}</td>`}
+                           + `<td class="num">${deltaHtml(z.c,z.cp,SC)}</td>`
+                           + (CU ? (cuVisto.has(s.e+"|"+z.z) ? "<td></td>" : (cuVisto.add(s.e+"|"+z.z), cuTd(CU.z.get(s.e+"|"+z.z)))) : "")}
       ${btnAd("z"+s.e+"|"+z.z+"|"+z.ca)}</tr>`;
       if(adAb.has("z"+s.e+"|"+z.z+"|"+z.ca)) out += filaAds(s.e, z.z, NCOL);
       // Conjuntos que quedan con el mismo rotulo (Capital: mismo nombre, uno por anuncio)
@@ -966,7 +1030,7 @@ function renderTabla(){
         ${ENT ? celdasEnt(c.m, false) + `<td class="num">${miles(c.l)}</td>`
               : barra(c.c) + (SC ? "" : `<td class="num">${c.c?pesos(c.c):"—"}</td>`)
                            + `<td class="num">${miles(c.l)}${unidad(z.ca)}</td>`
-                           + `<td class="num">${deltaHtml(c.c,c.cp,SC)}</td>`}
+                           + `<td class="num">${deltaHtml(c.c,c.cp,SC)}</td>` + (CU ? "<td></td>" : "")}
       ${AD.length ? (AD.some(r=>r.cj===c.cj) || (TODOS_AN && AA.some(r=>r.cj===c.cj)) ? btnAd("c"+c.cj) : "<td></td>") : ""}</tr>`;
         if(adAb.has("c"+c.cj)) out += filaAds(s.e, z.z, NCOL, c.cj); });
     });
@@ -979,7 +1043,7 @@ function renderTabla(){
     const marA=sumar(deTipo(filas), r=>marcaDe(r.e)), antM=sumar(deTipo(filasAnt), r=>marcaDe(r.e));
     const grupos=new Map();
     socs.forEach(s=>{ const m=marcaDe(s.e); if(!grupos.has(m)) grupos.set(m, []); grupos.get(m).push(s); });
-    marcas=[...grupos].map(([m,ss])=>{ const a=marA.get(m);
+    marcas=[...grupos].map(([m,ss])=>{ const a=marA.get(m) || {l:0};
       return {m, socs:ss, l:a.l, c:val(a), mt:metDe(a), cp:val(antM.get(m)),
               zonas:ss.flatMap(s=>s.zonas), wa:ss.every(s=>s.wa)}; })
       .sort((a,b)=> a.m===SIN_MARCA ? 1 : b.m===SIN_MARCA ? -1
@@ -1002,7 +1066,7 @@ function renderTabla(){
         ${ENT ? celdasEnt(g.mt, true) + `<td class="num">${miles(g.l)}</td>`
               : barra(g.c) + (SC ? "" : `<td class="num">${g.c?pesos(g.c):"—"}</td>`)
                            + `<td class="num">${miles(g.l)}${g.wa?unidad(g.zonas[0].ca):""}</td>`
-                           + `<td class="num">${deltaHtml(g.c,g.cp,SC)}</td>`}
+                           + `<td class="num">${deltaHtml(g.c,g.cp,SC)}</td>` + cuTd(CU?.m.get(g.m))}
         ${AD.length ? "<td></td>" : ""}</tr>`
       + (ab ? g.socs.map(socHtml).join("") : "");
   };
