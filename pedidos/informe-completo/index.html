@@ -1933,6 +1933,26 @@ document.getElementById("corteFecha").textContent=
     }
     h += `<tr class="tot"><td>Total</td><td class="n">${pesos(T.inv)}</td><td class="n">${miles(T.call)}</td><td class="n">${miles(T.sala)}</td><td class="n">${cpl(T.invCall+T.invSala, T.call+T.sala)}</td><td class="n"></td>${A.cu?'<td class="n"></td>':""}</tr></table>
       <div class="rx-nota">La inversión por sociedad incluye captación (Call y Sala) y alcance. El costo por lead se calcula solo con la inversión de Call y Sala.${A.cu?" “Call vs. lo pedido”: leads entregados frente a los que pidieron los calls en la Solicitud de leads.":""}</div>`;
+    // por call (Bogotá, Medellín, Centro): lo pedido en la Solicitud contra lo entregado. Las zonas
+    // que piden dos calls se reparten según lo que pidió cada uno (misma cuenta que la página).
+    let calls = [];
+    try{ const f = window.parent!==window ? window.parent.cumplimientoInforme : null;
+      if(typeof f==="function") calls = Object.keys(GRUPOS_INF||{}).map(g=>{
+        const porSoc = new Map(), suma = (m)=>{ let esp=0, lle=0; for(const [k,v] of Object.entries(m||{})){ esp+=v.esp; lle+=v.lle;
+          const n = base(k.slice(0,k.lastIndexOf("|"))), o = porSoc.get(n)||{esp:0,lle:0}; o.esp+=v.esp; o.lle+=v.lle; porSoc.set(n,o); } return {esp,lle}; };
+        const a = suma(f(A.d, A.h, g)); const ps = new Map(porSoc); porSoc.clear();
+        const b = suma(f(P.d, P.h, g));
+        return {g, esp:a.esp, lle:a.lle, ant:b.lle, soc:[...ps.entries()].filter(([,o])=>o.esp||o.lle).sort((x,y)=>y[1].lle-x[1].lle)};
+      }).filter(c=>c.esp||c.lle); }catch(e){ calls = []; }
+    if(calls.length){
+      const pc = (l,e) => e ? Math.round(l/e*100)+"%" : "—";
+      h += `<h2>Por call</h2><table><tr><th>Call</th><th class="n">Leads pedidos</th><th class="n">Leads entregados</th><th class="n">Cumplimiento</th><th class="n">Entregados vs. sem. ant.</th></tr>
+        ${calls.map(c=>{ const v = pct(c.lle, c.ant); return `<tr><td><b>${esc2(c.g)}</b></td><td class="n">${miles(c.esp)}</td><td class="n">${miles(c.lle)}</td><td class="n">${pc(c.lle,c.esp)}</td>
+          <td class="n">${v==null?"—":(v>=0?"+":"−")+Math.abs(Math.round(v*100))+"%"}</td></tr>`; }).join("")}</table>
+        <div class="rx-2" style="margin-top:10px;grid-template-columns:repeat(${Math.min(calls.length,3)},1fr)">${calls.map(c=>`<div><table><tr><th>${esc2(c.g)}</th><th class="n">Pedido</th><th class="n">Entregado</th></tr>
+          ${c.soc.map(([n,o])=>`<tr><td>${esc2(n)}</td><td class="n">${miles(o.esp)}</td><td class="n">${miles(o.lle)}</td></tr>`).join("")}</table></div>`).join("")}</div>
+        <div class="rx-nota">Leads de Call pedidos por cada call en la Solicitud de leads y los entregados por Meta en la semana. Cuando dos calls piden la misma zona, los leads se reparten según lo que pidió cada uno.</div>`;
+    }
     // Call y Sala por zona
     const top = t => A.zon.filter(z=>z.t===t && z.l>0).sort((a,b)=>b.l-a.l).slice(0,10);
     const tz = (t, arr) => `<div><h2>${t}: zonas con más leads</h2>${arr.length?`<table><tr><th>Sociedad · zona</th><th class="n">Leads</th><th class="n">Costo por lead</th></tr>${arr.map(z=>`<tr><td>${esc2(z.soc)} · ${esc2(z.zona)}</td><td class="n">${miles(z.l)}</td><td class="n">${cpl(z.cost,z.l)}</td></tr>`).join("")}</table>`:'<div class="rx-nota">Sin leads esta semana.</div>'}</div>`;
