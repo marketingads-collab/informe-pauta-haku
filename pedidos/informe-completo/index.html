@@ -439,6 +439,7 @@ footer{margin-top:44px; padding-top:20px; border-top:1px solid var(--line);
           <button type="button" class="fbtn" id="ordCpl" aria-pressed="false">Costo por lead</button>
           <button type="button" class="fbtn" id="toggleAll" aria-pressed="false">Abrir todas</button>
           <button type="button" class="fbtn desc" id="btnCsv">Descargar Excel</button>
+          <button type="button" class="fbtn desc" id="btnCum" hidden title="Lo pedido por cada call contra lo que llevamos, solo leads (sin costos), para enviar">Descargar cumplimiento</button>
         </div>
       </div>
       <div class="tscroll">
@@ -865,6 +866,7 @@ function cumHtml(o){
     <span class="pd"${o.rep?' title="En zonas que piden dos calls, los leads se reparten según lo que pide cada uno"':""}>Pedido ${miles(o.esp)} · llevamos ${ap}${miles(o.lle)}</span></div>`;
 }
 function renderTabla(){
+  document.getElementById("btnCum").hidden = true;     // solo en Call y dentro de Solicitud
   const porCpl = SC ? (a,b)=>(b.c??0)-(a.c??0) : (a,b)=>(a.c??Infinity)-(b.c??Infinity);
   const val = a => SC ? (a ? a.l : null) : cplDe(a);
   const cmpSoc =(a,b)=> orden==="cpl" ? porCpl(a,b) : a.nom.localeCompare(b.nom,"es");
@@ -965,6 +967,7 @@ function renderTabla(){
     : `<tr><th class="l">${POR_MARCA?"Marca · sociedad · zona":"Sociedad · zona"}</th><th class="l">Canal</th><th class="l">Costo por lead</th>
         <th class="num">CPL</th><th class="num">Leads</th><th class="num" title="${titAnt}">vs. período ant.</th></tr>`;
 
+  document.getElementById("btnCum").hidden = !CU;
   const cuTd = o => CU ? `<td class="num">${cumHtml(o)}</td>` : "";
   const cuVisto = new Set();          // una zona con dos canales: el cumplimiento va una sola vez
   if(CU) document.querySelector("#tbl thead tr").insertAdjacentHTML("beforeend",
@@ -1679,6 +1682,62 @@ function descargarCsv(){
   setTimeout(()=>URL.revokeObjectURL(url), 1000);
 }
 
+// Excel de cumplimiento para enviar (Ricardo a los gerentes, 21-nov): SOLO leads, nunca costos.
+// Por sociedad: total de cada call y luego cada zona por call. Fechas y filtro del informe.
+function filasCumplimiento(){
+  const f = (()=>{ try{ return window.parent!==window ? window.parent.cumplimientoInforme : null; }catch(e){ return null; } })();
+  if(typeof f!=="function") return [];
+  const calls = grupoInf ? [grupoInf] : Object.keys(GRUPOS_INF);
+  const porSoc = new Map();          // soc -> {tot: Map(call->o), zonas: [[zona, call, o]]}
+  for(const g of calls){
+    const m = f(R1.d, R1.h, g) || {};
+    for(const [k,o] of Object.entries(m)){
+      const i = k.lastIndexOf("|"), soc = k.slice(0,i), zona = k.slice(i+1);
+      if(!porSoc.has(soc)) porSoc.set(soc, {tot:new Map(), zonas:[]});
+      const S = porSoc.get(soc), t = S.tot.get(g) || {esp:0, lle:0};
+      t.esp += o.esp; t.lle += o.lle; S.tot.set(g, t); S.zonas.push([zona, g, o]);
+    }
+  }
+  const est = o => !o.esp ? "Sin pedido" : o.lle/o.esp < 0.9 ? "Faltan" : o.lle/o.esp > 1.1 ? "Por encima" : "En meta";
+  const fila = (soc, zona, g, o) => [soc, zona, g, o.esp, Math.round(o.lle), Math.round(o.lle)-o.esp, o.esp ? o.lle/o.esp : null, est(o)];
+  const out = [];
+  [...porSoc.keys()].sort((a,b)=>a.localeCompare(b,"es")).forEach(soc=>{
+    const S = porSoc.get(soc);
+    calls.forEach(g=>{ const t = S.tot.get(g); if(t) out.push(fila(soc, "Total sociedad", g, t)); });
+    S.zonas.sort((a,b)=>a[0].localeCompare(b[0],"es") || calls.indexOf(a[1])-calls.indexOf(b[1]))
+      .forEach(([z,g,o])=>out.push(fila(soc, z, g, o)));
+  });
+  return out;
+}
+async function descargarCumplimiento(){
+  const XLSX = await cargarXlsx();
+  const CABC = ["Sociedad","Zona","Call","Pedido","Llevamos","Diferencia","Cumplimiento","Estado"];
+  const datos = filasCumplimiento();
+  const ws = XLSX.utils.aoa_to_sheet([CABC, ...datos]);
+  ws["!cols"] = [24,20,18,10,10,11,13,12].map(w=>({wch:w}));
+  ws["!autofilter"] = {ref: XLSX.utils.encode_range({s:{r:0,c:0}, e:{r:datos.length, c:CABC.length-1}})};
+  const Z = [null,null,null,"#,##0","#,##0","#,##0","0%",null];
+  datos.forEach((_,i)=>Z.forEach((z,c)=>{ const cel=ws[XLSX.utils.encode_cell({r:i+1,c})]; if(z && cel && cel.t==="n") cel.z=z; }));
+  const leeme = XLSX.utils.aoa_to_sheet([
+    ["Cumplimiento de leads de Call — Haku"], [],
+    ["Fechas", fmtRango(R1.d, R1.h)], ["Datos hasta", D.hasta], ["Calls", grupoInf || "Todos"], [],
+    ["Pedido", "Leads que pidió el call en esas fechas: los diarios de cada día en que la zona estuvo prendida."],
+    ["Llevamos", "Leads que entregó Meta. Si dos calls piden la misma zona, los leads se reparten según lo que pide cada uno."],
+    ["Estado", "En meta = entre 90% y 110% · Faltan = menos de 90% · Por encima = más de 110%"],
+    ["Total sociedad", "Suma de las zonas de esa sociedad que pidió cada call."],
+    ["OJO con los últimos días", "Meta reajusta a qué día pertenece cada lead hasta 72 horas después, así que las cifras recientes pueden moverse."]]);
+  leeme["!cols"] = [{wch:22},{wch:96}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Cumplimiento");
+  XLSX.utils.book_append_sheet(wb, leeme, "Léeme");
+  XLSX.writeFile(wb, `cumplimiento-leads-haku-${R1.d}_a_${R1.h}.xlsx`);
+}
+document.getElementById("btnCum").onclick = async function(){
+  const b = this, t0 = b.textContent; b.textContent = "Preparando…"; b.disabled = true;
+  try{ await descargarCumplimiento(); b.textContent = "Descargado ✓"; }
+  catch(e){ b.textContent = "No se pudo descargar"; }
+  finally{ b.disabled = false; setTimeout(()=>b.textContent = t0, 2600); }
+};
 async function exportar(btn){
   const t0 = btn.textContent;
   btn.textContent = "Preparando…"; btn.disabled = true;
