@@ -847,16 +847,29 @@ function cumplimientoCalls(){
   const z = new Map(), s = new Map(), mk = new Map();
   const add = (mp, k, v) => { const o = mp.get(k) || {esp:0, lle:0, rep:false};
     o.esp += v.esp; o.lle += v.lle; o.rep = o.rep || v.rep; mp.set(k, o); };
-  for(const [k,v] of Object.entries(m)){
+  const recorrer = (mm, fn) => { for(const [k,v] of Object.entries(mm)){
     const i = k.lastIndexOf("|"), en = k.slice(0,i), zn = k.slice(i+1);
     if(!ei.has(en) || !zi.has(zn)) continue;
-    const e = ei.get(en);
-    add(z, e+"|"+zi.get(zn), v); add(s, e, v); if(POR_MARCA) add(mk, marcaDe(e), v);
+    const e = ei.get(en); fn(e+"|"+zi.get(zn), e, v);
+  } };
+  recorrer(m, (kz, e, v) => { add(z, kz, v); add(s, e, v); if(POR_MARCA) add(mk, marcaDe(e), v); });
+  // Con filtro de un call: donde ese call no pidio nada, decir que call si la pidio y cuanto
+  // (la zona sale completa en los dos y si no, los leads parecen de este call).
+  if(grupoInf) for(const g of Object.keys(GRUPOS_INF)){
+    if(g===grupoInf) continue;
+    const ot = (mp, k, esp) => { const o = mp.get(k); if(o && !o.esp && esp>0){ o.otros = o.otros || {}; o.otros[g] = (o.otros[g]||0) + esp; } };
+    recorrer(f(R1.d, R1.h, g) || {}, (kz, e, v) => { ot(z, kz, v.esp); ot(s, e, v.esp); if(POR_MARCA) ot(mk, marcaDe(e), v.esp); });
   }
   return {z, s, m:mk};
 }
 function cumHtml(o){
-  if(!o || !o.esp) return `<span class="sem na">${o && o.lle ? "Sin pedido" : "—"}</span>`;
+  if(!o || !o.esp){
+    if(!o || !o.lle) return `<span class="sem na">—</span>`;
+    if(!grupoInf) return `<span class="sem na">Ningún call la pidió</span>`;
+    const ot = Object.entries(o.otros || {});
+    return `<div class="cu"><span class="sem na">No la pidió ${escA(grupoInf)}</span>`
+      + (ot.length ? `<span class="pd">la pidió ${ot.map(([g,n])=>`${escA(g)} (${miles(n)})`).join(" y ")}</span>` : "") + `</div>`;
+  }
   const r = o.lle/o.esp, cls = r < 0.9 ? "bad" : r > 1.1 ? "warn" : "good";
   const txt = {bad:"Faltan", warn:"Por encima", good:"En meta"}[cls];
   const w = Math.min(100, r/1.3*100), ap = o.rep ? "≈ " : "";
