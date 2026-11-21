@@ -125,6 +125,31 @@ tr.adrow>td{background:var(--surface-2); white-space:normal; text-align:left; pa
 .gfilt .soclbl{margin-right:4px}
 /* ---------- secciones ---------- */
 section{margin-top:40px}
+/* ---------- Resumen ejecutivo semanal (acta Haku, acuerdo 5) ---------- */
+.rx-card{display:flex; flex-wrap:wrap; align-items:center; gap:10px 14px; padding:14px 16px; margin:24px 0 0}
+.rx-card h3{margin:0; font-size:15px} .rx-card p{margin:2px 0 0; color:var(--ink-2); font-size:12.5px}
+.rx-card .rx-act{margin-left:auto; display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+.rx-card select{font:inherit; font-size:13px; padding:6px 8px; border:1px solid var(--line); border-radius:6px; background:var(--surface); color:var(--ink)}
+.rx-ov{position:fixed; inset:0; background:rgba(14,27,32,.45); z-index:50; display:flex; justify-content:center; align-items:flex-start; overflow:auto; padding:24px 12px}
+.rx-box{background:#fff; color:#1d2a30; width:100%; max-width:860px; border-radius:10px; box-shadow:0 10px 40px rgba(0,0,0,.25)}
+.rx-bar{position:sticky; top:0; background:#fff; border-bottom:1px solid #e3e8ea; padding:10px 14px; display:flex; gap:8px; align-items:center; border-radius:10px 10px 0 0; z-index:2}
+.rx-bar .sp{flex:1}
+#rxDoc{padding:28px 32px; font-family:Arial,Helvetica,sans-serif; color:#1d2a30}
+#rxDoc h1{font-size:22px; margin:0} #rxDoc .rx-sub{color:#5b6b71; font-size:13px; margin:4px 0 18px}
+#rxDoc h2{font-size:15px; margin:22px 0 8px; padding-bottom:5px; border-bottom:2px solid #008E9B; color:#0b3b42}
+#rxDoc .rx-kpis{display:grid; grid-template-columns:repeat(3,1fr); gap:10px}
+#rxDoc .rx-k{border:1px solid #dfe6e8; border-radius:8px; padding:10px 12px; page-break-inside:avoid}
+#rxDoc .rx-k .v{font-size:20px; font-weight:bold; margin-top:2px} #rxDoc .rx-k .l{font-size:12px; color:#5b6b71}
+#rxDoc .rx-k .c{font-size:11.5px; color:#5b6b71; margin-top:3px}
+#rxDoc table{width:100%; border-collapse:collapse; font-size:12px; page-break-inside:auto}
+#rxDoc tr{page-break-inside:avoid}
+#rxDoc th{text-align:left; font-size:10.5px; text-transform:uppercase; color:#5b6b71; border-bottom:2px solid #dfe6e8; padding:6px 6px}
+#rxDoc td{padding:5px 6px; border-bottom:1px solid #eef2f3}
+#rxDoc td.n, #rxDoc th.n{text-align:right; white-space:nowrap}
+#rxDoc tr.tot td{font-weight:bold; border-top:2px solid #dfe6e8}
+#rxDoc .rx-nota{font-size:11px; color:#7a8a90; margin-top:6px}
+#rxDoc .rx-2{display:grid; grid-template-columns:1fr 1fr; gap:16px}
+#rxDoc .rx-pie{margin-top:22px; font-size:10.5px; color:#7a8a90; border-top:1px solid #eef2f3; padding-top:8px}
 section.first{margin-top:32px}
 .shead{margin-bottom:14px}
 h2{font-size:19px; font-weight:600; letter-spacing:-.015em}
@@ -415,6 +440,13 @@ footer{margin-top:44px; padding-top:20px; border-top:1px solid var(--line);
 
 <div class="wrap">
   <div class="gfilt" id="gfilt" hidden></div>
+  <div class="panel rx-card" id="rxCard" hidden>
+    <div><h3>Resumen ejecutivo semanal</h3>
+      <p>Inversión, leads de Call y Sala, costo por lead y alcance de la semana, comparados con la semana anterior.</p></div>
+    <div class="rx-act"><select id="rxSem" aria-label="Semana"></select>
+      <button type="button" class="fbtn desc" id="rxVer">Ver resumen</button>
+      <button type="button" class="fbtn desc" id="rxPdf">Descargar PDF</button></div>
+  </div>
 
   <section class="first">
     <div class="shead">
@@ -1819,6 +1851,144 @@ const [Y,M,Dd]=D.hasta.split("-");
 document.getElementById("pie").textContent=`Actualizado ${Dd}/${M}/${Y}`;
 document.getElementById("corteFecha").textContent=
   `${+Dd} de ${MES[+M].toLowerCase()} de ${Y}`;
+// ---------- Resumen ejecutivo semanal (acta Haku, acuerdo 5; Rubén 21-nov) ----------
+// Solo en la versión completa (con costos). Semana de lunes a domingo contra la anterior.
+// Tono informativo: sin secciones de "problemas" ni alarmas (Rubén: que informe sin hacernos
+// quedar mal). Alcance: solo inversión y personas alcanzadas.
+(function(){
+  if(SC || CM) return;
+  const card = document.getElementById("rxCard"); if(!card) return;
+  const MESL = ["","enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+  const lunes = f => { const d = aD(f); const w = (d.getUTCDay()+6)%7; return mas(f, -w); };
+  const fLarga = f => `${+f.slice(8,10)} de ${MESL[+f.slice(5,7)]}`;
+  const semTxt = (d,h) => d.slice(0,7)===h.slice(0,7) ? `del ${+d.slice(8,10)} al ${fLarga(h)} de ${h.slice(0,4)}` : `del ${fLarga(d)} al ${fLarga(h)} de ${h.slice(0,4)}`;
+  const semanas = [];
+  for(let l = lunes(F_MAX); l >= F_MIN && semanas.length < 10; l = mas(l,-7)){
+    const dom = mas(l,6); semanas.push({d:l, h:dom, curso: dom > F_MAX});
+  }
+  if(!semanas.length) return;
+  const sel = document.getElementById("rxSem");
+  sel.innerHTML = semanas.map((w,i)=>`<option value="${i}">Semana ${semTxt(w.d, w.curso?F_MAX:w.h)}${w.curso?" (en curso)":""}</option>`).join("");
+  sel.value = String(semanas.findIndex(w=>!w.curso) >= 0 ? semanas.findIndex(w=>!w.curso) : 0);
+  card.hidden = false;
+
+  const base = n => String(n).replace(/ Medell[ií]n$/,"");
+  const pct = (a,b) => b ? (a-b)/b : null;
+  const varTxt = (a,b,txtSub="sube",txtBaja="baja") => { const p = pct(a,b); if(p==null) return "sin semana anterior para comparar";
+    if(Math.abs(p) < 0.005) return "igual que la semana anterior";
+    return `${p>0?"▲":"▼"} ${Math.abs(Math.round(p*100))}% vs. semana anterior`; };
+  const esc2 = t => String(t).replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+  function datos(w){
+    const h = w.curso ? F_MAX : w.h;
+    const cap = FILAS_TODAS.filter(r=>r.f>=w.d && r.f<=h);
+    const al = ALF.filter(r=>r.f>=w.d && r.f<=h);
+    const tot = {inv:0, call:0, sala:0, invCall:0, invSala:0, invAl:0, alc:0};
+    const soc = new Map(), zon = new Map();
+    const S = n => soc.get(n) || (soc.set(n, {inv:0, call:0, sala:0, invCall:0, invSala:0, invAl:0, alc:0}), soc.get(n));
+    for(const r of cap){
+      const t = D.tipos[r.t], n = base(D.empresas[r.e]), o = S(n);
+      tot.inv += r.cost; o.inv += r.cost;
+      if(t==="Call"){ tot.call += r.l; tot.invCall += r.cost; o.call += r.l; o.invCall += r.cost; }
+      else { tot.sala += r.l; tot.invSala += r.cost; o.sala += r.l; o.invSala += r.cost; }
+      const kz = t+"|"+n+"|"+D.zonas[r.z], z = zon.get(kz) || {t, soc:n, zona:D.zonas[r.z], l:0, cost:0};
+      z.l += r.l; z.cost += r.cost; zon.set(kz, z);
+    }
+    for(const r of al){
+      const n = base(D.al_e[r.e]), o = S(n);
+      tot.inv += r.cost; tot.invAl += r.cost; tot.alc += r.alc; o.inv += r.cost; o.invAl += r.cost; o.alc += r.alc;
+    }
+    let cu = null;
+    try{ const f = window.parent!==window ? window.parent.cumplimientoInforme : null;
+      if(typeof f==="function"){ cu = new Map(); const m = f(w.d, h, null) || {};
+        for(const [k,v] of Object.entries(m)){ const n = base(k.slice(0,k.lastIndexOf("|"))); const o = cu.get(n)||{esp:0,lle:0}; o.esp+=v.esp; o.lle+=v.lle; cu.set(n,o); } } }catch(e){ cu = null; }
+    return {d:w.d, h, tot, soc, zon:[...zon.values()], cu};
+  }
+
+  function armar(i){
+    const w = semanas[i], A = datos(w), P = datos({d:mas(w.d,-7), h:mas(w.d,-1), curso:false});
+    const cpl = (inv,l) => l>0 ? pesos(inv/l) : "—";
+    const k = (l, v, c) => `<div class="rx-k"><div class="l">${l}</div><div class="v">${v}</div><div class="c">${c}</div></div>`;
+    const T = A.tot, Q = P.tot;
+    let h = `<h1>Resumen ejecutivo · Haku</h1>
+      <div class="rx-sub">Semana ${semTxt(A.d, A.h)}${w.curso?" (semana en curso, datos hasta el "+fLarga(F_MAX)+")":""} · Pauta en Meta</div>
+      <h2>Resumen general</h2><div class="rx-kpis">
+      ${k("Inversión total", pesos(T.inv), varTxt(T.inv, Q.inv))}
+      ${k("Leads de Call", miles(T.call), varTxt(T.call, Q.call))}
+      ${k("Leads de Sala", miles(T.sala), varTxt(T.sala, Q.sala))}
+      ${k("Costo por lead de Call", cpl(T.invCall,T.call), "semana anterior: "+cpl(Q.invCall,Q.call))}
+      ${k("Costo por lead de Sala", cpl(T.invSala,T.sala), "semana anterior: "+cpl(Q.invSala,Q.sala))}
+      ${k("Personas alcanzadas", miles(T.alc), "campañas de alcance y demanda · "+pesos(T.invAl)+" invertidos")}
+      </div>`;
+    // por sociedad
+    const filas = [...A.soc.entries()].filter(([,o])=>o.inv>0||o.call||o.sala).sort((a,b)=>b[1].inv-a[1].inv);
+    h += `<h2>Por sociedad</h2><table><tr><th>Sociedad</th><th class="n">Inversión</th><th class="n">Leads Call</th><th class="n">Leads Sala</th>
+      <th class="n">Costo por lead</th><th class="n">Leads vs. sem. ant.</th>${A.cu?'<th class="n">Call vs. lo pedido</th>':""}</tr>`;
+    for(const [n,o] of filas){
+      const p = P.soc.get(n), l = o.call+o.sala, lp = p ? p.call+p.sala : 0, cu = A.cu && A.cu.get(n);
+      const vp = pct(l, lp);
+      h += `<tr><td>${esc2(n)}</td><td class="n">${pesos(o.inv)}</td><td class="n">${miles(o.call)}</td><td class="n">${miles(o.sala)}</td>
+        <td class="n">${cpl(o.invCall+o.invSala, l)}</td><td class="n">${vp==null?"—":(vp>=0?"+":"−")+Math.abs(Math.round(vp*100))+"%"}</td>
+        ${A.cu?`<td class="n">${cu && cu.esp ? Math.round(cu.lle/cu.esp*100)+"%" : "—"}</td>`:""}</tr>`;
+    }
+    h += `<tr class="tot"><td>Total</td><td class="n">${pesos(T.inv)}</td><td class="n">${miles(T.call)}</td><td class="n">${miles(T.sala)}</td><td class="n">${cpl(T.invCall+T.invSala, T.call+T.sala)}</td><td class="n"></td>${A.cu?'<td class="n"></td>':""}</tr></table>
+      <div class="rx-nota">La inversión por sociedad incluye captación (Call y Sala) y alcance. El costo por lead se calcula solo con la inversión de Call y Sala.${A.cu?" “Call vs. lo pedido”: leads entregados frente a los que pidieron los calls en la Solicitud de leads.":""}</div>`;
+    // Call y Sala por zona
+    const top = t => A.zon.filter(z=>z.t===t && z.l>0).sort((a,b)=>b.l-a.l).slice(0,10);
+    const tz = (t, arr) => `<div><h2>${t}: zonas con más leads</h2>${arr.length?`<table><tr><th>Sociedad · zona</th><th class="n">Leads</th><th class="n">Costo por lead</th></tr>${arr.map(z=>`<tr><td>${esc2(z.soc)} · ${esc2(z.zona)}</td><td class="n">${miles(z.l)}</td><td class="n">${cpl(z.cost,z.l)}</td></tr>`).join("")}</table>`:'<div class="rx-nota">Sin leads esta semana.</div>'}</div>`;
+    h += `<div class="rx-2">${tz("Call", top("Call"))}${tz("Sala", top("Sala"))}</div>`;
+    // mejores costos (destacados, en positivo)
+    const best = A.zon.filter(z=>z.l>=20 && z.cost>0).sort((a,b)=>a.cost/a.l-b.cost/b.l).slice(0,5);
+    if(best.length) h += `<h2>Mejores costos por lead de la semana</h2><table><tr><th>Sociedad · zona</th><th>Tipo</th><th class="n">Leads</th><th class="n">Costo por lead</th></tr>
+      ${best.map(z=>`<tr><td>${esc2(z.soc)} · ${esc2(z.zona)}</td><td>${z.t}</td><td class="n">${miles(z.l)}</td><td class="n">${cpl(z.cost,z.l)}</td></tr>`).join("")}</table>
+      <div class="rx-nota">Zonas con al menos 20 leads en la semana. Son las que mejor responden a la inversión.</div>`;
+    // alcance
+    const al = [...A.soc.entries()].filter(([,o])=>o.invAl>0).sort((a,b)=>b[1].alc-a[1].alc);
+    if(al.length) h += `<h2>Alcance y generación de demanda</h2><table><tr><th>Sociedad</th><th class="n">Inversión</th><th class="n">Personas alcanzadas</th></tr>
+      ${al.map(([n,o])=>`<tr><td>${esc2(n)}</td><td class="n">${pesos(o.invAl)}</td><td class="n">${miles(o.alc)}</td></tr>`).join("")}
+      <tr class="tot"><td>Total</td><td class="n">${pesos(T.invAl)}</td><td class="n">${miles(T.alc)}</td></tr></table>
+      <div class="rx-nota">Personas alcanzadas: suma del alcance de cada día de la semana.</div>`;
+    h += `<div class="rx-pie">Fuente: Meta Ads, datos hasta el ${fLarga(F_MAX)} de ${F_MAX.slice(0,4)}. Meta puede reajustar los leads de los últimos 3 días.</div>`;
+    return {html:h, nombre:`resumen-ejecutivo-haku-${A.d}_a_${A.h}.pdf`};
+  }
+
+  let ov = null;
+  function ver(){
+    const R = armar(+sel.value);
+    if(!ov){ ov = document.createElement("div"); ov.className = "rx-ov"; document.body.appendChild(ov);
+      ov.addEventListener("click", e=>{ if(e.target===ov) ov.hidden = true; }); }
+    ov.innerHTML = `<div class="rx-box"><div class="rx-bar"><b>Resumen ejecutivo</b><span class="sp"></span>
+      <button type="button" class="fbtn desc" id="rxPdf2">Descargar PDF</button><button type="button" class="fbtn" id="rxCerrar">Cerrar</button></div>
+      <div id="rxDoc">${R.html}</div></div>`;
+    ov.hidden = false;
+    ov.querySelector("#rxCerrar").onclick = ()=> ov.hidden = true;
+    ov.querySelector("#rxPdf2").onclick = function(){ pdf(this, ov.querySelector("#rxDoc"), R.nombre); };
+  }
+  const PDF_URL = "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";
+  let pdfP = null;
+  const cargarPdf = () => window.html2pdf ? Promise.resolve() : (pdfP = pdfP || new Promise((ok, no)=>{
+    const sc = document.createElement("script"); sc.src = PDF_URL; sc.onload = ok; sc.onerror = ()=>{ pdfP = null; no(); };
+    document.head.appendChild(sc); }));
+  async function pdf(btn, el, nombre){
+    const t0 = btn.textContent; btn.textContent = "Preparando…"; btn.disabled = true;
+    try{
+      await cargarPdf();
+      await window.html2pdf().set({margin:[10,8,12,8], filename:nombre, image:{type:"jpeg", quality:0.95},
+        html2canvas:{scale:2, backgroundColor:"#ffffff"}, jsPDF:{unit:"mm", format:"a4", orientation:"portrait"},
+        pagebreak:{mode:["css","legacy"], avoid:["tr",".rx-k","h2"]}}).from(el).save();
+      btn.textContent = "Descargado ✓";
+    }catch(e){ btn.textContent = "No se pudo, intenta de nuevo"; }
+    finally{ btn.disabled = false; setTimeout(()=>btn.textContent = t0, 2600); }
+  }
+  document.getElementById("rxVer").onclick = ver;
+  document.getElementById("rxPdf").onclick = function(){
+    const R = armar(+sel.value), tmp = document.createElement("div");
+    tmp.id = "rxDoc"; tmp.innerHTML = R.html; tmp.style.cssText = "position:fixed;left:-10000px;top:0;width:800px;background:#fff";
+    document.body.appendChild(tmp);
+    pdf(this, tmp, R.nombre).finally(()=>tmp.remove());
+  };
+  window.__resumenEjecutivo = armar;   // para pruebas
+})();
 render();
 addEventListener("resize", renderDia);
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change", render);
