@@ -1766,7 +1766,7 @@ async function descargarCumplimiento(){
   const leeme = XLSX.utils.aoa_to_sheet([
     ["Cumplimiento de leads de Call — Haku"], [],
     ["Fechas", fmtRango(R1.d, R1.h)], ["Datos hasta", D.hasta], ["Calls", grupoInf || "Todos"], [],
-    ["Pedido", "Leads que pidió el call en esas fechas: los diarios de cada día en que la zona estuvo prendida."],
+    ["Pedido", "Leads que pidió el call en esas fechas: los diarios de cada día en que la zona estuvo prendida. Desde el 28-nov-2026: lunes a viernes el día completo, sábado medio día, domingos y festivos no cuentan."],
     ["Llevamos", "Leads que entregó Meta. Si dos calls piden la misma zona, los leads se reparten según lo que pide cada uno."],
     ["Estado", "En meta = entre 90% y 110% · Faltan = menos de 90% · Por encima = más de 110%"],
     ["Total sociedad", "Suma de las zonas de esa sociedad que pidió cada call."],
